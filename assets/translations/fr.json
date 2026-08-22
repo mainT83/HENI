@@ -105,5 +105,6 @@
   "bird": "Oiseau",
   "administration_date": "Date d'administration",
   "reminder_date": "Date de rappel (optionnel)",
-  "reminder": "Rappel"
+  "reminder": "Rappel",
+  "more_details": "Plus de détails"
 }

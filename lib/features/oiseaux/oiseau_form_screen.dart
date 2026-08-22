@@ -180,139 +180,191 @@ class _OiseauFormScreenState extends ConsumerState<OiseauFormScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Center(
-              child: GestureDetector(
-                onTap: _choisirPhoto,
-                child: CircleAvatar(
-                  radius: 48,
-                  backgroundColor: Colors.grey.shade200,
-                  backgroundImage: _nouvellePhoto != null
-                      ? FileImage(_nouvellePhoto!)
-                      : (_photoUrlExistante != null
-                          ? NetworkImage(_photoUrlExistante!)
-                          : null) as ImageProvider?,
-                  child: (_nouvellePhoto == null && _photoUrlExistante == null)
-                      ? const Icon(Icons.add_a_photo_outlined, color: Colors.grey)
-                      : null,
+            Row(
+              children: [
+                GestureDetector(
+                  onTap: _choisirPhoto,
+                  child: CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Colors.grey.shade200,
+                    backgroundImage: _nouvellePhoto != null
+                        ? FileImage(_nouvellePhoto!)
+                        : (_photoUrlExistante != null
+                            ? NetworkImage(_photoUrlExistante!)
+                            : null) as ImageProvider?,
+                    child: (_nouvellePhoto == null && _photoUrlExistante == null)
+                        ? const Icon(Icons.add_a_photo_outlined, color: Colors.grey, size: 20)
+                        : null,
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            TextFormField(
-              controller: _bagueCtrl,
-              decoration: InputDecoration(labelText: t?.t('ring_number') ?? 'Numéro de bague'),
-              validator: (v) => (v == null || v.trim().isEmpty) ? t?.t('required_field') : null,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _nomCtrl,
-              decoration: InputDecoration(labelText: t?.t('name') ?? 'Nom'),
-            ),
-            const SizedBox(height: 12),
-
-            especesAsync.when(
-              loading: () => const LinearProgressIndicator(),
-              error: (e, st) => Text('Erreur chargement espèces: $e'),
-              data: (especes) => DropdownButtonFormField<String>(
-                value: _especeId,
-                decoration: InputDecoration(labelText: t?.t('species') ?? 'Espèce'),
-                items: especes
-                    .map((e) => DropdownMenuItem(value: e.id, child: Text(e.nomFr)))
-                    .toList(),
-                onChanged: (v) => setState(() => _especeId = v),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            _ChampRace(
-              raceCtrl: _raceCtrl,
-              raceFocusNode: _raceFocusNode,
-              especeId: _especeId,
-              especes: especesAsync.valueOrNull ?? const [],
-              label: t?.t('breed') ?? 'Race',
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _mutationCtrl,
-              decoration: InputDecoration(labelText: t?.t('mutation') ?? 'Mutation'),
-            ),
-            const SizedBox(height: 12),
-
-            DropdownButtonFormField<String>(
-              value: _sexe,
-              decoration: InputDecoration(labelText: t?.t('sex') ?? 'Sexe'),
-              items: [
-                DropdownMenuItem(value: SexeOiseau.male, child: Text(t?.t('male') ?? 'Mâle')),
-                DropdownMenuItem(value: SexeOiseau.femelle, child: Text(t?.t('female') ?? 'Femelle')),
-                DropdownMenuItem(
-                    value: SexeOiseau.indetermine, child: Text(t?.t('unknown') ?? 'Indéterminé')),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: TextFormField(
+                    controller: _bagueCtrl,
+                    decoration:
+                        InputDecoration(labelText: t?.t('ring_number') ?? 'Numéro de bague', isDense: true),
+                    validator: (v) => (v == null || v.trim().isEmpty) ? t?.t('required_field') : null,
+                  ),
+                ),
               ],
-              onChanged: (v) => setState(() => _sexe = v ?? SexeOiseau.indetermine),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
-            InkWell(
-              onTap: _choisirDateNaissance,
-              child: InputDecorator(
-                decoration: InputDecoration(labelText: t?.t('birth_date') ?? 'Date de naissance'),
-                child: Text(_dateNaissance != null
-                    ? DateFormat('dd/MM/yyyy').format(_dateNaissance!)
-                    : '—'),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            TextFormField(
-              controller: _origineCtrl,
-              decoration: InputDecoration(labelText: t?.t('origin_breeder') ?? "Éleveur d'origine"),
-            ),
-            const SizedBox(height: 12),
-
-            DropdownButtonFormField<String>(
-              value: _statut,
-              decoration: InputDecoration(labelText: t?.t('status') ?? 'Statut'),
-              items: [
-                DropdownMenuItem(
-                    value: StatutOiseau.reproducteur, child: Text(t?.t('status_breeder') ?? 'Reproducteur')),
-                DropdownMenuItem(value: StatutOiseau.jeune, child: Text(t?.t('status_young') ?? 'Jeune')),
-                DropdownMenuItem(
-                    value: StatutOiseau.aVendre, child: Text(t?.t('status_for_sale') ?? 'À vendre')),
-                DropdownMenuItem(value: StatutOiseau.vendu, child: Text(t?.t('status_sold') ?? 'Vendu')),
-                DropdownMenuItem(
-                    value: StatutOiseau.decede, child: Text(t?.t('status_deceased') ?? 'Décédé')),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _nomCtrl,
+                    decoration: InputDecoration(labelText: t?.t('name') ?? 'Nom', isDense: true),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _sexe,
+                    isDense: true,
+                    decoration: InputDecoration(labelText: t?.t('sex') ?? 'Sexe', isDense: true),
+                    items: [
+                      DropdownMenuItem(value: SexeOiseau.male, child: Text(t?.t('male') ?? 'Mâle')),
+                      DropdownMenuItem(value: SexeOiseau.femelle, child: Text(t?.t('female') ?? 'Femelle')),
+                      DropdownMenuItem(
+                          value: SexeOiseau.indetermine, child: Text(t?.t('unknown') ?? 'Indéterminé')),
+                    ],
+                    onChanged: (v) => setState(() => _sexe = v ?? SexeOiseau.indetermine),
+                  ),
+                ),
               ],
-              onChanged: (v) => setState(() => _statut = v ?? StatutOiseau.jeune),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
-            _ParentPicker(
-              label: t?.t('father') ?? 'Père',
-              sexe: SexeOiseau.male,
-              selectedId: _pereId,
-              onChanged: (id) => setState(() => _pereId = id),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: especesAsync.when(
+                    loading: () => const LinearProgressIndicator(),
+                    error: (e, st) => Text('Erreur: $e'),
+                    data: (especes) => DropdownButtonFormField<String>(
+                      value: _especeId,
+                      isDense: true,
+                      decoration: InputDecoration(labelText: t?.t('species') ?? 'Espèce', isDense: true),
+                      items: especes
+                          .map((e) => DropdownMenuItem(value: e.id, child: Text(e.nomFr)))
+                          .toList(),
+                      onChanged: (v) => setState(() => _especeId = v),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _ChampRace(
+                    raceCtrl: _raceCtrl,
+                    raceFocusNode: _raceFocusNode,
+                    especeId: _especeId,
+                    especes: especesAsync.valueOrNull ?? const [],
+                    label: t?.t('breed') ?? 'Race',
+                    dense: true,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            _ParentPicker(
-              label: t?.t('mother') ?? 'Mère',
-              sexe: SexeOiseau.femelle,
-              selectedId: _mereId,
-              onChanged: (id) => setState(() => _mereId = id),
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
-            TextFormField(
-              controller: _notesCtrl,
-              decoration: const InputDecoration(labelText: 'Notes'),
-              maxLines: 3,
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _statut,
+                    isDense: true,
+                    decoration: InputDecoration(labelText: t?.t('status') ?? 'Statut', isDense: true),
+                    items: [
+                      DropdownMenuItem(
+                          value: StatutOiseau.reproducteur,
+                          child: Text(t?.t('status_breeder') ?? 'Reproducteur')),
+                      DropdownMenuItem(
+                          value: StatutOiseau.jeune, child: Text(t?.t('status_young') ?? 'Jeune')),
+                      DropdownMenuItem(
+                          value: StatutOiseau.aVendre, child: Text(t?.t('status_for_sale') ?? 'À vendre')),
+                      DropdownMenuItem(
+                          value: StatutOiseau.vendu, child: Text(t?.t('status_sold') ?? 'Vendu')),
+                      DropdownMenuItem(
+                          value: StatutOiseau.decede, child: Text(t?.t('status_deceased') ?? 'Décédé')),
+                    ],
+                    onChanged: (v) => setState(() => _statut = v ?? StatutOiseau.jeune),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: InkWell(
+                    onTap: _choisirDateNaissance,
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                          labelText: t?.t('birth_date') ?? 'Date de naissance', isDense: true),
+                      child: Text(_dateNaissance != null
+                          ? DateFormat('dd/MM/yyyy').format(_dateNaissance!)
+                          : '—'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            Theme(
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                childrenPadding: const EdgeInsets.only(bottom: 8),
+                title: Text(t?.t('more_details') ?? 'Plus de détails',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                children: [
+                  TextFormField(
+                    controller: _mutationCtrl,
+                    decoration: InputDecoration(labelText: t?.t('mutation') ?? 'Mutation', isDense: true),
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _origineCtrl,
+                    decoration: InputDecoration(
+                        labelText: t?.t('origin_breeder') ?? "Éleveur d'origine", isDense: true),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _ParentPicker(
+                          label: t?.t('father') ?? 'Père',
+                          sexe: SexeOiseau.male,
+                          selectedId: _pereId,
+                          onChanged: (id) => setState(() => _pereId = id),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _ParentPicker(
+                          label: t?.t('mother') ?? 'Mère',
+                          sexe: SexeOiseau.femelle,
+                          selectedId: _mereId,
+                          onChanged: (id) => setState(() => _mereId = id),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _notesCtrl,
+                    decoration: const InputDecoration(labelText: 'Notes', isDense: true),
+                    maxLines: 2,
+                  ),
+                ],
+              ),
             ),
 
             if (_erreur != null) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Text(_erreur!, style: const TextStyle(color: Colors.red)),
             ],
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
             ElevatedButton(
               onPressed: _loading ? null : _enregistrer,
               child: _loading
@@ -336,6 +388,7 @@ class _ChampRace extends ConsumerWidget {
   final String? especeId;
   final List<Espece> especes;
   final String label;
+  final bool dense;
 
   const _ChampRace({
     required this.raceCtrl,
@@ -343,6 +396,7 @@ class _ChampRace extends ConsumerWidget {
     required this.especeId,
     required this.especes,
     required this.label,
+    this.dense = false,
   });
 
   @override
@@ -370,7 +424,7 @@ class _ChampRace extends ConsumerWidget {
       return TextFormField(
         controller: raceCtrl,
         focusNode: raceFocusNode,
-        decoration: InputDecoration(labelText: label),
+        decoration: InputDecoration(labelText: label, isDense: dense),
       );
     }
 
@@ -386,7 +440,7 @@ class _ChampRace extends ConsumerWidget {
         return TextFormField(
           controller: controller,
           focusNode: focusNode,
-          decoration: InputDecoration(labelText: label, helperText: aide),
+          decoration: InputDecoration(labelText: label, helperText: dense ? null : aide, isDense: dense),
         );
       },
       optionsViewBuilder: (context, onSelected, options) {
@@ -438,7 +492,8 @@ class _ParentPicker extends ConsumerWidget {
         final oiseaux = snapshot.data ?? [];
         return DropdownButtonFormField<String>(
           value: selectedId,
-          decoration: InputDecoration(labelText: label),
+          isDense: true,
+          decoration: InputDecoration(labelText: label, isDense: true),
           items: [
             const DropdownMenuItem(value: null, child: Text('—')),
             ...oiseaux.map(

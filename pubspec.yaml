@@ -27,6 +27,7 @@ dependencies:
   intl: ^0.19.0
   fl_chart: ^0.68.0
   uuid: ^4.4.0
+  google_fonts: ^6.2.1
 
   # Pilotage local du contrôleur Breeding Control (appel HTTP direct sur le
   # réseau WiFi local, indépendant de Supabase)
