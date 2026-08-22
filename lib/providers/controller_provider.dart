@@ -31,6 +31,20 @@ class ControllerConnectionNotifier extends StateNotifier<AsyncValue<ControllerSt
   void deconnecter() {
     state = null;
   }
+
+  Future<void> changerMode(String mode) async {
+    final ip = _ref.read(controllerIpProvider).trim();
+    if (ip.isEmpty) return;
+    await _repo.setMode(ip, mode);
+    await connecter();
+  }
+
+  Future<void> reglerSortie(int sortie, int dutyPct) async {
+    final ip = _ref.read(controllerIpProvider).trim();
+    if (ip.isEmpty) return;
+    await _repo.setSortieManuelle(ip, sortie, dutyPct);
+    await connecter();
+  }
 }
 
 final controllerConnectionProvider =

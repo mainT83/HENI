@@ -120,12 +120,60 @@ class _ControllerScreenState extends ConsumerState<ControllerScreen> {
   }
 }
 
-class _EtatContoleur extends StatelessWidget {
+class _EtatContoleur extends ConsumerStatefulWidget {
   final ControllerStatus status;
   const _EtatContoleur({required this.status});
 
   @override
+  ConsumerState<_EtatContoleur> createState() => _EtatContoleurState();
+}
+
+class _EtatContoleurState extends ConsumerState<_EtatContoleur> {
+  bool _changementModeEnCours = false;
+  late List<int> _dutiesLocal;
+
+  @override
+  void initState() {
+    super.initState();
+    _dutiesLocal = List.of(widget.status.dutiesPct);
+  }
+
+  @override
+  void didUpdateWidget(covariant _EtatContoleur oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Resynchronise avec le contrôleur après un rafraîchissement, sauf
+    // pendant un glissement de curseur (évite de "sauter" sous le doigt).
+    _dutiesLocal = List.of(widget.status.dutiesPct);
+  }
+
+  Future<void> _changerMode(String mode) async {
+    setState(() => _changementModeEnCours = true);
+    try {
+      await ref.read(controllerConnectionProvider.notifier).changerMode(mode);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Erreur : $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _changementModeEnCours = false);
+    }
+  }
+
+  Future<void> _reglerSortie(int index, int dutyPct) async {
+    try {
+      await ref.read(controllerConnectionProvider.notifier).reglerSortie(index + 1, dutyPct);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Erreur : $e')));
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final status = widget.status;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -138,13 +186,40 @@ class _EtatContoleur extends StatelessWidget {
               backgroundColor: status.wifiMode == 'ap' ? AppTheme.warning : AppTheme.success,
               labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
             ),
-            const SizedBox(width: 8),
-            Chip(
-              label: Text(_libelleMode(status.mode)),
-              backgroundColor: AppTheme.primary.withOpacity(0.12),
-              labelStyle: const TextStyle(color: AppTheme.primary, fontSize: 12),
-            ),
           ],
+        ),
+        const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Mode', style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 10),
+                if (_changementModeEnCours)
+                  const Center(child: Padding(
+                    padding: EdgeInsets.all(8),
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ))
+                else if (const ['auto', 'manuel', 'cycles'].contains(status.mode))
+                  SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(value: 'auto', label: Text('Automatique')),
+                      ButtonSegment(value: 'manuel', label: Text('Manuel')),
+                      ButtonSegment(value: 'cycles', label: Text('Cycles')),
+                    ],
+                    selected: {status.mode},
+                    onSelectionChanged: (s) => _changerMode(s.first),
+                  )
+                else
+                  Text(
+                    'Contrôleur en navigation menu sur son écran LCD — revenez à l\'accueil du boîtier pour piloter depuis l\'appli.',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                  ),
+              ],
+            ),
+          ),
         ),
         const SizedBox(height: 16),
         Row(
@@ -177,10 +252,33 @@ class _EtatContoleur extends StatelessWidget {
               children: [
                 const Text('Sorties lumineuses', style: TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 12),
-                for (var i = 0; i < status.dutiesPct.length; i++) ...[
-                  _SortieBar(label: 'S${i + 1}', pourcentage: status.dutiesPct[i]),
-                  if (i < status.dutiesPct.length - 1) const SizedBox(height: 10),
-                ],
+                if (status.mode == 'manuel')
+                  for (var i = 0; i < _dutiesLocal.length; i++)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(
+                        children: [
+                          SizedBox(width: 28, child: Text('S${i + 1}', style: const TextStyle(fontSize: 12))),
+                          Expanded(
+                            child: Slider(
+                              value: _dutiesLocal[i].toDouble(),
+                              min: 0,
+                              max: 100,
+                              divisions: 100,
+                              label: '${_dutiesLocal[i]}%',
+                              onChanged: (v) => setState(() => _dutiesLocal[i] = v.round()),
+                              onChangeEnd: (v) => _reglerSortie(i, v.round()),
+                            ),
+                          ),
+                          SizedBox(width: 36, child: Text('${_dutiesLocal[i]}%', style: const TextStyle(fontSize: 12))),
+                        ],
+                      ),
+                    )
+                else
+                  for (var i = 0; i < status.dutiesPct.length; i++) ...[
+                    _SortieBar(label: 'S${i + 1}', pourcentage: status.dutiesPct[i]),
+                    if (i < status.dutiesPct.length - 1) const SizedBox(height: 10),
+                  ],
               ],
             ),
           ),
@@ -197,19 +295,6 @@ class _EtatContoleur extends StatelessWidget {
         ],
       ],
     );
-  }
-
-  String _libelleMode(String mode) {
-    switch (mode) {
-      case 'manuel':
-        return 'Manuel';
-      case 'cycles':
-        return 'Cycles saisonniers';
-      case 'menu':
-        return 'Menu';
-      default:
-        return 'Automatique';
-    }
   }
 }
 
