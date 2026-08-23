@@ -50,25 +50,31 @@ class DashboardScreen extends ConsumerWidget {
           ref.invalidate(tendanceMensuelleProvider);
           ref.invalidate(incubationsActivesProvider);
         },
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _QuickActionsBanner(t: t),
-            const SizedBox(height: 16),
-            statsAsync.when(
-              loading: () => const Center(child: Padding(
-                padding: EdgeInsets.all(24),
-                child: CircularProgressIndicator(),
-              )),
-              error: (e, st) => Text('${t?.t('error_generic') ?? 'Erreur'}: $e'),
-              data: (stats) => GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.3,
-                children: [
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final largeur = constraints.maxWidth;
+            final colonnesKpi = largeur > 900 ? 7 : (largeur > 600 ? 4 : 2);
+            final cotACote = largeur > 900;
+
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _QuickActionsBanner(t: t),
+                const SizedBox(height: 14),
+                statsAsync.when(
+                  loading: () => const Center(child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: CircularProgressIndicator(),
+                  )),
+                  error: (e, st) => Text('${t?.t('error_generic') ?? 'Erreur'}: $e'),
+                  data: (stats) => GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: colonnesKpi,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: cotACote ? 1.1 : 1.3,
+                    children: [
                   _StatCard(
                     label: t?.t('total_birds') ?? 'Oiseaux',
                     value: '${stats.totalOiseaux}',
@@ -116,14 +122,29 @@ class DashboardScreen extends ConsumerWidget {
                     color: AppTheme.success,
                     onTap: () => context.push('/traitements'),
                   ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                if (cotACote)
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(flex: 3, child: _TendanceChart(t: t, hauteurGraphe: 160)),
+                        const SizedBox(width: 14),
+                        Expanded(flex: 2, child: _IncubationsActives(t: t)),
+                      ],
+                    ),
+                  )
+                else ...[
+                  _TendanceChart(t: t, hauteurGraphe: 200),
+                  const SizedBox(height: 14),
+                  _IncubationsActives(t: t),
                 ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            _TendanceChart(t: t),
-            const SizedBox(height: 20),
-            _IncubationsActives(t: t),
-          ],
+              ],
+            );
+          },
         ),
       ),
     );
@@ -217,7 +238,8 @@ class _StatCard extends StatelessWidget {
 
 class _TendanceChart extends ConsumerWidget {
   final dynamic t;
-  const _TendanceChart({required this.t});
+  final double hauteurGraphe;
+  const _TendanceChart({required this.t, this.hauteurGraphe = 200});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -241,7 +263,7 @@ class _TendanceChart extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             SizedBox(
-              height: 200,
+              height: hauteurGraphe,
               child: tendanceAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, st) => Center(child: Text('${t?.t('error_generic') ?? 'Erreur'}: $e')),
