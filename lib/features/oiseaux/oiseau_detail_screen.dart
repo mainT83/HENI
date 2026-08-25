@@ -11,6 +11,8 @@ import '../../providers/locale_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/feather_icon.dart';
 import '../../providers/traitements_provider.dart';
+import '../../providers/profile_provider.dart';
+import '../../widgets/premium_locked_card.dart';
 import '../traitements/traitements_list_screen.dart';
 
 class OiseauDetailScreen extends ConsumerWidget {
@@ -135,29 +137,44 @@ class _DetailBody extends ConsumerWidget {
         const SizedBox(height: 16),
 
         if (oiseau.pereId != null || oiseau.mereId != null)
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Généalogie', style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 8),
-                  if (oiseau.pereId != null)
-                    _ParentTile(label: t?.t('father') ?? 'Père', oiseauId: oiseau.pereId!),
-                  if (oiseau.mereId != null)
-                    _ParentTile(label: t?.t('mother') ?? 'Mère', oiseauId: oiseau.mereId!),
-                  const SizedBox(height: 8),
-                  _ConsanguiniteInfo(oiseauId: oiseau.id),
-                ],
+          ref.watch(isPremiumProvider).when(
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (estPremium) {
+                  if (!estPremium) {
+                    return const PremiumLockedCard(
+                      titre: 'Suivi généalogique',
+                      message:
+                          "L'arbre généalogique et le coefficient de consanguinité sont réservés au plan premium.",
+                    );
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Généalogie', style: Theme.of(context).textTheme.titleMedium),
+                              const SizedBox(height: 8),
+                              if (oiseau.pereId != null)
+                                _ParentTile(label: t?.t('father') ?? 'Père', oiseauId: oiseau.pereId!),
+                              if (oiseau.mereId != null)
+                                _ParentTile(label: t?.t('mother') ?? 'Mère', oiseauId: oiseau.mereId!),
+                              const SizedBox(height: 8),
+                              _ConsanguiniteInfo(oiseauId: oiseau.id),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _ArbreGenealogique(oiseauId: oiseau.id),
+                    ],
+                  );
+                },
               ),
-            ),
-          ),
-
-        if (oiseau.pereId != null || oiseau.mereId != null) ...[
-          const SizedBox(height: 16),
-          _ArbreGenealogique(oiseauId: oiseau.id),
-        ],
 
         const SizedBox(height: 16),
         _TraitementsSection(oiseauId: oiseau.id),

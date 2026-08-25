@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/oiseau.dart';
+import 'limite_plan_gratuit_exception.dart';
 
 class OiseauAncetre {
   final String id;
@@ -65,12 +66,19 @@ class OiseauxRepository {
   }
 
   Future<Oiseau> create(Oiseau oiseau) async {
-    final row = await _client
-        .from('oiseaux')
-        .insert(oiseau.toInsertJson(eleveurId: _eleveurId))
-        .select()
-        .single();
-    return Oiseau.fromJson(row);
+    try {
+      final row = await _client
+          .from('oiseaux')
+          .insert(oiseau.toInsertJson(eleveurId: _eleveurId))
+          .select()
+          .single();
+      return Oiseau.fromJson(row);
+    } on PostgrestException catch (e) {
+      if (e.message.contains('limite_plan_gratuit')) {
+        throw LimitePlanGratuitException();
+      }
+      rethrow;
+    }
   }
 
   Future<Oiseau> update(Oiseau oiseau) async {

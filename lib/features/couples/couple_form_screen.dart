@@ -9,9 +9,10 @@ import '../../models/oiseau.dart';
 import '../../providers/couples_provider.dart';
 import '../../providers/oiseaux_provider.dart';
 import '../../providers/locale_provider.dart';
-import '../../data/couples_repository.dart';
 import '../../data/oiseaux_repository.dart';
 import '../../core/theme/app_theme.dart';
+import '../../providers/profile_provider.dart';
+import '../../widgets/premium_locked_card.dart';
 
 /// Écran unique pour créer (coupleId == null) ou modifier un couple.
 class CoupleFormScreen extends ConsumerStatefulWidget {
@@ -129,31 +130,11 @@ class _CoupleFormScreenState extends ConsumerState<CoupleFormScreen> {
       if (widget.isEdition) ref.invalidate(coupleDetailProvider(widget.coupleId!));
 
       if (mounted) context.pop();
-    } on LimitePlanGratuitException {
-      if (mounted) _afficherDialogueLimite();
     } catch (e) {
       setState(() => _erreur = e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
     }
-  }
-
-  void _afficherDialogueLimite() {
-    final t = ref.read(translationsProvider).valueOrNull;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(t?.t('free_limit_title') ?? 'Limite du plan gratuit'),
-        content: Text(t?.t('free_limit_message') ??
-            'Le plan gratuit permet de gérer jusqu\'à 5 couples. Contactez-nous pour passer en premium et en ajouter davantage.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(t?.t('cancel') ?? 'Fermer'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -194,8 +175,22 @@ class _CoupleFormScreenState extends ConsumerState<CoupleFormScreen> {
           ),
           const SizedBox(height: 12),
 
-          if (_chargementRisque) const LinearProgressIndicator(),
-          if (_risque != null) _RisqueBanner(risque: _risque!, t: t),
+          if (_maleId != null && _femelleId != null)
+            ref.watch(isPremiumProvider).when(
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
+                  data: (estPremium) {
+                    if (!estPremium) {
+                      return const PremiumLockedCard(
+                        titre: 'Coefficient de consanguinité',
+                        message: 'Le contrôle automatique du risque de consanguinité est réservé au plan premium.',
+                      );
+                    }
+                    if (_chargementRisque) return const LinearProgressIndicator();
+                    if (_risque != null) return _RisqueBanner(risque: _risque!, t: t);
+                    return const SizedBox.shrink();
+                  },
+                ),
 
           const SizedBox(height: 12),
           InkWell(

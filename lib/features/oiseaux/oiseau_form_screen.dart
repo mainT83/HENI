@@ -10,6 +10,7 @@ import '../../models/oiseau.dart';
 import '../../models/espece.dart';
 import '../../providers/oiseaux_provider.dart';
 import '../../providers/locale_provider.dart';
+import '../../data/limite_plan_gratuit_exception.dart';
 
 /// Écran unique pour créer (oiseauId == null) ou modifier un oiseau.
 class OiseauFormScreen extends ConsumerStatefulWidget {
@@ -155,11 +156,31 @@ class _OiseauFormScreenState extends ConsumerState<OiseauFormScreen> {
       if (widget.isEdition) ref.invalidate(oiseauDetailProvider(widget.oiseauId!));
 
       if (mounted) context.pop();
+    } on LimitePlanGratuitException {
+      if (mounted) _afficherDialogueLimite();
     } catch (e) {
       setState(() => _erreur = e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  void _afficherDialogueLimite() {
+    final t = ref.read(translationsProvider).valueOrNull;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t?.t('free_limit_title') ?? 'Limite du plan gratuit'),
+        content: Text(t?.t('free_limit_message') ??
+            'Le plan gratuit permet de gérer jusqu\'à 10 oiseaux, sans suivi généalogique.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(t?.t('cancel') ?? 'Fermer'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
