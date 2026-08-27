@@ -19,12 +19,10 @@ class ReglagesScreen extends ConsumerStatefulWidget {
 class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
   bool _paiementEnCours = false;
 
-  Future<void> _passerPremium({required bool viaPayPal}) async {
+  Future<void> _passerPremium() async {
     setState(() => _paiementEnCours = true);
     try {
-      final repo = ref.read(paymentRepositoryProvider);
-      final payUrl =
-          viaPayPal ? await repo.creerPaiementPremiumPayPal() : await repo.creerPaiementPremium();
+      final payUrl = await ref.read(paymentRepositoryProvider).creerPaiementPremium();
       final ouvert = await launchUrl(Uri.parse(payUrl), mode: LaunchMode.externalApplication);
       if (!ouvert && mounted) {
         ScaffoldMessenger.of(context)
@@ -37,35 +35,6 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
     } finally {
       if (mounted) setState(() => _paiementEnCours = false);
     }
-  }
-
-  void _choisirMoyenPaiement() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.account_balance_wallet_outlined),
-              title: const Text('Tunisie (carte, e-Dinar — Konnect)'),
-              onTap: () {
-                Navigator.of(context).pop();
-                _passerPremium(viaPayPal: false);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.public),
-              title: const Text('International (PayPal)'),
-              onTap: () {
-                Navigator.of(context).pop();
-                _passerPremium(viaPayPal: true);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -96,7 +65,7 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
                   trailing: estPremium
                       ? null
                       : FilledButton(
-                          onPressed: _paiementEnCours ? null : _choisirMoyenPaiement,
+                          onPressed: _paiementEnCours ? null : _passerPremium,
                           child: _paiementEnCours
                               ? const SizedBox(
                                   height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
