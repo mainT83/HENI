@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_provider.dart';
 
 class TendanceMensuelle {
@@ -113,17 +114,22 @@ final dashboardStatsProvider = FutureProvider<DashboardStats>((ref) async {
 });
 
 /// Juste après une connexion (surtout OAuth), le jeton fraîchement émis peut
-/// être rejeté une fraction de seconde par un léger décalage d'horloge côté
-/// serveur (PostgrestException "JWT issued at future", code PGRST303) — un
-/// nouvel essai après un court délai suffit, le jeton est alors valide.
+/// être rejeté par un décalage d'horloge côté serveur (PostgrestException
+/// "JWT issued at future", code PGRST303). Un simple délai ne suffit pas
+/// toujours : on force explicitement l'émission d'un jeton neuf via
+/// refreshSession() avant de réessayer, jusqu'à 3 fois.
 Future<dynamic> _rpcAvecReessai(SupabaseClient client, String fonction) async {
-  try {
-    return await client.rpc(fonction);
-  } on PostgrestException catch (e) {
-    if (e.code == 'PGRST303') {
-      await Future.delayed(const Duration(seconds: 2));
+  for (var tentative = 0; ; tentative++) {
+    try {
       return await client.rpc(fonction);
+    } on PostgrestException catch (e) {
+      if (e.code != 'PGRST303' || tentative >= 2) rethrow;
+      await Future.delayed(Duration(seconds: 2 * (tentative + 1)));
+      try {
+        await client.auth.refreshSession();
+      } catch (_) {
+        // Si le rafraîchissement échoue, on retente quand même l'appel tel quel.
+      }
     }
-    rethrow;
   }
 }

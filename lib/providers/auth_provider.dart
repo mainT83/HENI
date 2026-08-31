@@ -9,6 +9,11 @@ final authStateProvider = StreamProvider<AuthState>((ref) {
   return client.auth.onAuthStateChange;
 });
 
+/// Passe à true quand l'utilisateur arrive via un lien de réinitialisation
+/// de mot de passe (email "mot de passe oublié"), pour forcer l'écran de
+/// définition d'un nouveau mot de passe avant d'accéder au reste de l'app.
+final recuperationMotDePasseProvider = StateProvider<bool>((ref) => false);
+
 final currentUserProvider = Provider<User?>((ref) {
   final client = ref.watch(supabaseClientProvider);
   // On réagit aussi aux changements pour que ce provider reste à jour.
@@ -44,6 +49,10 @@ class AuthRepository {
     // (Authentication > Providers > Apple) + "Sign in with Apple" activé
     // dans les capacités Xcode du projet iOS.
     await _client.auth.signInWithOAuth(OAuthProvider.apple);
+  }
+
+  Future<void> reinitialiserMotDePasse(String email) async {
+    await _client.auth.resetPasswordForEmail(email.trim());
   }
 
   Future<void> signOut() async {

@@ -38,6 +38,7 @@ class _DefinirMotDePasseScreenState extends ConsumerState<DefinirMotDePasseScree
     });
     try {
       await ref.read(authRepositoryProvider).definirMotDePasse(_motDePasseCtrl.text);
+      ref.read(recuperationMotDePasseProvider.notifier).state = false;
       // Le router réévalue normalement tout seul (identité "email" ajoutée),
       // mais on force la navigation aussi pour ne pas dépendre du timing.
       if (mounted) context.go('/dashboard');
@@ -73,7 +74,9 @@ class _DefinirMotDePasseScreenState extends ConsumerState<DefinirMotDePasseScree
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Ton compte est connecté via Google. Définis un mot de passe pour pouvoir aussi te connecter depuis un autre appareil, sans Google.',
+                      ref.watch(recuperationMotDePasseProvider)
+                          ? 'Choisis un nouveau mot de passe pour ton compte.'
+                          : 'Ton compte est connecté via Google. Définis un mot de passe pour pouvoir aussi te connecter depuis un autre appareil, sans Google.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                     ),

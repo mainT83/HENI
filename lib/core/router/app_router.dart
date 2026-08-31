@@ -26,6 +26,12 @@ import '../../widgets/app_shell.dart';
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
 
+  ref.listen(authStateProvider, (previous, next) {
+    if (next.valueOrNull?.event == AuthChangeEvent.passwordRecovery) {
+      ref.read(recuperationMotDePasseProvider.notifier).state = true;
+    }
+  });
+
   return GoRouter(
     initialLocation: '/dashboard',
     refreshListenable: _AuthChangeNotifier(ref),
@@ -41,7 +47,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         final identites = Supabase.instance.client.auth.currentUser?.identities ?? [];
         final connecteViaGoogle = identites.any((i) => i.provider == 'google');
         final aUnMotDePasse = identites.any((i) => i.provider == 'email');
-        if (connecteViaGoogle && !aUnMotDePasse) return motDePasseObligatoire;
+        final enRecuperation = ref.read(recuperationMotDePasseProvider);
+        if ((connecteViaGoogle && !aUnMotDePasse) || enRecuperation) return motDePasseObligatoire;
       }
       return null;
     },
