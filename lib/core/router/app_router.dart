@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/auth_provider.dart';
 import '../../features/auth/login_screen.dart';
 import '../../features/auth/signup_screen.dart';
+import '../../features/auth/definir_mot_de_passe_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/oiseaux/oiseaux_list_screen.dart';
 import '../../features/oiseaux/oiseau_detail_screen.dart';
@@ -31,14 +32,26 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final loggedIn = Supabase.instance.client.auth.currentSession != null;
       final onAuthPage = state.matchedLocation == '/login' || state.matchedLocation == '/signup';
+      const motDePasseObligatoire = '/definir-mot-de-passe';
 
       if (!loggedIn && !onAuthPage) return '/login';
       if (loggedIn && onAuthPage) return '/dashboard';
+
+      if (loggedIn && state.matchedLocation != motDePasseObligatoire) {
+        final identites = Supabase.instance.client.auth.currentUser?.identities ?? [];
+        final connecteViaGoogle = identites.any((i) => i.provider == 'google');
+        final aUnMotDePasse = identites.any((i) => i.provider == 'email');
+        if (connecteViaGoogle && !aUnMotDePasse) return motDePasseObligatoire;
+      }
       return null;
     },
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(path: '/signup', builder: (context, state) => const SignupScreen()),
+      GoRoute(
+        path: '/definir-mot-de-passe',
+        builder: (context, state) => const DefinirMotDePasseScreen(),
+      ),
 
       ShellRoute(
         builder: (context, state, child) =>
