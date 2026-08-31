@@ -10,6 +10,7 @@ import '../../providers/pontes_provider.dart';
 import '../../providers/couples_provider.dart';
 import '../../providers/oiseaux_provider.dart';
 import '../../providers/locale_provider.dart';
+import '../../providers/dashboard_provider.dart';
 
 class PonteFormScreen extends ConsumerStatefulWidget {
   final String? ponteId;
@@ -146,6 +147,8 @@ class _PonteFormScreenState extends ConsumerState<PonteFormScreen> {
 
       ref.invalidate(pontesListProvider);
       if (widget.isEdition) ref.invalidate(ponteDetailProvider(widget.ponteId!));
+      ref.invalidate(dashboardStatsProvider);
+      ref.invalidate(incubationsActivesProvider);
 
       if (mounted) context.pop();
     } catch (e) {

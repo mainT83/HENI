@@ -107,7 +107,23 @@ class DashboardStats {
 
 final dashboardStatsProvider = FutureProvider<DashboardStats>((ref) async {
   final client = ref.watch(supabaseClientProvider);
-  final rows = await client.rpc('dashboard_stats');
+  final rows = await _rpcAvecReessai(client, 'dashboard_stats');
   final row = (rows as List).first as Map<String, dynamic>;
   return DashboardStats.fromJson(row);
 });
+
+/// Juste après une connexion (surtout OAuth), le jeton fraîchement émis peut
+/// être rejeté une fraction de seconde par un léger décalage d'horloge côté
+/// serveur (PostgrestException "JWT issued at future", code PGRST303) — un
+/// nouvel essai après un court délai suffit, le jeton est alors valide.
+Future<dynamic> _rpcAvecReessai(SupabaseClient client, String fonction) async {
+  try {
+    return await client.rpc(fonction);
+  } on PostgrestException catch (e) {
+    if (e.code == 'PGRST303') {
+      await Future.delayed(const Duration(seconds: 2));
+      return await client.rpc(fonction);
+    }
+    rethrow;
+  }
+}

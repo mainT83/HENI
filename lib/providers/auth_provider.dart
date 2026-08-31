@@ -24,8 +24,12 @@ class AuthRepository {
     await _client.auth.signInWithPassword(email: email, password: password);
   }
 
-  Future<void> signUpWithEmail(String email, String password) async {
-    await _client.auth.signUp(email: email, password: password);
+  Future<void> signUpWithEmail(String email, String password, {String? fullName}) async {
+    await _client.auth.signUp(
+      email: email,
+      password: password,
+      data: (fullName != null && fullName.trim().isNotEmpty) ? {'full_name': fullName.trim()} : null,
+    );
   }
 
   Future<void> signInWithGoogle() async {
@@ -44,6 +48,13 @@ class AuthRepository {
 
   Future<void> signOut() async {
     await _client.auth.signOut();
+  }
+
+  /// Définit/change le mot de passe du compte connecté — utile notamment
+  /// pour un compte créé via Google, qui n'a jamais de mot de passe Nidus
+  /// et serait sinon bloqué pour se connecter sans passer par Google.
+  Future<void> definirMotDePasse(String nouveauMotDePasse) async {
+    await _client.auth.updateUser(UserAttributes(password: nouveauMotDePasse));
   }
 }
 

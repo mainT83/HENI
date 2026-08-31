@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +10,7 @@ import '../../models/oiseau.dart';
 import '../../models/espece.dart';
 import '../../providers/oiseaux_provider.dart';
 import '../../providers/locale_provider.dart';
+import '../../providers/dashboard_provider.dart';
 import '../../data/limite_plan_gratuit_exception.dart';
 
 /// Écran unique pour créer (oiseauId == null) ou modifier un oiseau.
@@ -41,7 +42,8 @@ class _OiseauFormScreenState extends ConsumerState<OiseauFormScreen> {
   String? _pereId;
   String? _mereId;
 
-  File? _nouvellePhoto;
+  XFile? _nouvellePhoto;
+  Uint8List? _nouvellePhotoBytes;
   String? _photoUrlExistante;
 
   bool _loading = false;
@@ -90,7 +92,11 @@ class _OiseauFormScreenState extends ConsumerState<OiseauFormScreen> {
     final picker = ImagePicker();
     final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
     if (file != null) {
-      setState(() => _nouvellePhoto = File(file.path));
+      final bytes = await file.readAsBytes();
+      setState(() {
+        _nouvellePhoto = file;
+        _nouvellePhotoBytes = bytes;
+      });
     }
   }
 
@@ -147,13 +153,16 @@ class _OiseauFormScreenState extends ConsumerState<OiseauFormScreen> {
         sauvegarde = await repo.create(base);
       }
 
-      if (_nouvellePhoto != null) {
-        final url = await repo.uploadPhoto(oiseauId: sauvegarde.id, file: _nouvellePhoto!);
+      if (_nouvellePhotoBytes != null) {
+        final url = await repo.uploadPhoto(oiseauId: sauvegarde.id, bytes: _nouvellePhotoBytes!);
         await repo.update(sauvegarde.copyWith(photoUrl: url));
       }
 
       ref.invalidate(oiseauxListProvider);
       if (widget.isEdition) ref.invalidate(oiseauDetailProvider(widget.oiseauId!));
+      ref.invalidate(dashboardStatsProvider);
+      ref.invalidate(tendanceMensuelleProvider);
+      ref.invalidate(incubationsActivesProvider);
 
       if (mounted) context.pop();
     } on LimitePlanGratuitException {
@@ -208,12 +217,12 @@ class _OiseauFormScreenState extends ConsumerState<OiseauFormScreen> {
                   child: CircleAvatar(
                     radius: 28,
                     backgroundColor: Colors.grey.shade200,
-                    backgroundImage: _nouvellePhoto != null
-                        ? FileImage(_nouvellePhoto!)
+                    backgroundImage: _nouvellePhotoBytes != null
+                        ? MemoryImage(_nouvellePhotoBytes!)
                         : (_photoUrlExistante != null
                             ? NetworkImage(_photoUrlExistante!)
                             : null) as ImageProvider?,
-                    child: (_nouvellePhoto == null && _photoUrlExistante == null)
+                    child: (_nouvellePhotoBytes == null && _photoUrlExistante == null)
                         ? const Icon(Icons.add_a_photo_outlined, color: Colors.grey, size: 20)
                         : null,
                   ),
@@ -432,6 +441,13 @@ class _ChampRace extends ConsumerWidget {
     if (categorie == 'canari') {
       suggestions = (ref.watch(racesCanariProvider).valueOrNull ?? const []).map((r) => r.nom).toList();
       aide = 'Chant · Couleur · Posture';
+    } else if (categorie == 'canari_chant' || categorie == 'canari_couleur' || categorie == 'canari_posture') {
+      final sousCategorie = categorie!.substring('canari_'.length);
+      suggestions = (ref.watch(racesCanariProvider).valueOrNull ?? const [])
+          .where((r) => r.categorie == sousCategorie)
+          .map((r) => r.nom)
+          .toList();
+      aide = 'Race ou mutation';
     } else if (categorie == 'chardonneret') {
       suggestions = ref.watch(racesChardonneretProvider).valueOrNull ?? const [];
       aide = 'Mutations couleur';

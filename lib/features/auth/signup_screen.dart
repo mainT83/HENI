@@ -15,6 +15,7 @@ class SignupScreen extends ConsumerStatefulWidget {
 
 class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _nomCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _loading = false;
@@ -23,6 +24,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   @override
   void dispose() {
+    _nomCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
@@ -39,6 +41,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       await ref.read(authRepositoryProvider).signUpWithEmail(
             _emailCtrl.text.trim(),
             _passwordCtrl.text,
+            fullName: _nomCtrl.text,
           );
       setState(() => _info = 'Vérifiez votre email pour confirmer votre compte.');
     } catch (e) {
@@ -64,6 +67,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  TextFormField(
+                    controller: _nomCtrl,
+                    decoration: InputDecoration(labelText: t?.t('name') ?? 'Nom'),
+                    validator: (v) => (v == null || v.trim().isEmpty) ? t?.t('required_field') : null,
+                  ),
+                  const SizedBox(height: 12),
                   TextFormField(
                     controller: _emailCtrl,
                     keyboardType: TextInputType.emailAddress,

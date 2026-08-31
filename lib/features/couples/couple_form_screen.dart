@@ -12,6 +12,7 @@ import '../../providers/locale_provider.dart';
 import '../../data/oiseaux_repository.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/profile_provider.dart';
+import '../../providers/dashboard_provider.dart';
 import '../../widgets/premium_locked_card.dart';
 
 /// Écran unique pour créer (coupleId == null) ou modifier un couple.
@@ -128,6 +129,7 @@ class _CoupleFormScreenState extends ConsumerState<CoupleFormScreen> {
 
       ref.invalidate(couplesListProvider);
       if (widget.isEdition) ref.invalidate(coupleDetailProvider(widget.coupleId!));
+      ref.invalidate(dashboardStatsProvider);
 
       if (mounted) context.pop();
     } catch (e) {

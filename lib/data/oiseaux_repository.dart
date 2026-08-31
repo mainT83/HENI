@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/oiseau.dart';
 import 'limite_plan_gratuit_exception.dart';
@@ -97,11 +97,11 @@ class OiseauxRepository {
 
   /// Upload une photo dans le bucket "photos-oiseaux" sous {eleveur_id}/{oiseau_id}.jpg
   /// et retourne l'URL publique.
-  Future<String> uploadPhoto({required String oiseauId, required File file}) async {
+  Future<String> uploadPhoto({required String oiseauId, required Uint8List bytes}) async {
     final path = '$_eleveurId/$oiseauId.jpg';
-    await _client.storage.from('photos-oiseaux').upload(
+    await _client.storage.from('photos-oiseaux').uploadBinary(
           path,
-          file,
+          bytes,
           fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'),
         );
     return _client.storage.from('photos-oiseaux').getPublicUrl(path);

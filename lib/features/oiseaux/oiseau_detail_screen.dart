@@ -11,6 +11,7 @@ import '../../providers/locale_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/feather_icon.dart';
 import '../../providers/traitements_provider.dart';
+import '../../providers/dashboard_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../widgets/premium_locked_card.dart';
 import '../traitements/traitements_list_screen.dart';
@@ -52,6 +53,10 @@ class OiseauDetailScreen extends ConsumerWidget {
               );
               if (confirm == true) {
                 await ref.read(oiseauxRepositoryProvider).delete(oiseauId);
+                ref.invalidate(oiseauxListProvider);
+                ref.invalidate(dashboardStatsProvider);
+                ref.invalidate(tendanceMensuelleProvider);
+                ref.invalidate(incubationsActivesProvider);
                 if (context.mounted) context.pop();
               }
             },

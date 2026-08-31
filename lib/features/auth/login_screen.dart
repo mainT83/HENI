@@ -101,12 +101,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       icon: const Icon(Icons.g_mobiledata),
                       label: Text(t?.t('continue_with_google') ?? 'Continuer avec Google'),
                     ),
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(
-                      onPressed: () => ref.read(authRepositoryProvider).signInWithApple(),
-                      icon: const Icon(Icons.apple),
-                      label: Text(t?.t('continue_with_apple') ?? 'Continuer avec Apple'),
-                    ),
                     const SizedBox(height: 16),
                     TextButton(
                       onPressed: () => context.go('/signup'),
