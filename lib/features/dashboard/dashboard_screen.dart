@@ -80,12 +80,14 @@ class DashboardScreen extends ConsumerWidget {
                     value: '${stats.totalOiseaux}',
                     iconWidget: const FeatherIcon(size: 28, color: AppTheme.amber),
                     color: AppTheme.amber,
+                    onTap: () => context.push('/oiseaux'),
                   ),
                   _StatCard(
                     label: t?.t('active_couples') ?? 'Couples actifs',
                     value: '${stats.couplesActifs}',
                     icon: Icons.favorite,
                     color: AppTheme.orange,
+                    onTap: () => context.push('/couples'),
                   ),
                   _StatCard(
                     label: t?.t('young_birds') ?? 'Jeunes',

@@ -51,13 +51,33 @@ class OiseauDetailScreen extends ConsumerWidget {
                   ],
                 ),
               );
-              if (confirm == true) {
-                await ref.read(oiseauxRepositoryProvider).delete(oiseauId);
-                ref.invalidate(oiseauxListProvider);
+              if (confirm != true || !context.mounted) return;
+
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => const Center(child: CircularProgressIndicator()),
+              );
+              try {
+                // Passe par le notifier de la liste : il exécute le delete puis
+                // recharge lui-même, donc la liste est à jour dès qu'on y revient
+                // (au lieu d'invalider un provider qu'on espère être réécouté).
+                await ref.read(oiseauxListProvider.notifier).supprimer(oiseauId);
+                ref.invalidate(oiseauDetailProvider(oiseauId));
                 ref.invalidate(dashboardStatsProvider);
                 ref.invalidate(tendanceMensuelleProvider);
                 ref.invalidate(incubationsActivesProvider);
-                if (context.mounted) context.pop();
+                if (context.mounted) {
+                  Navigator.of(context, rootNavigator: true).pop();
+                  context.pop();
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.of(context, rootNavigator: true).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${t?.t('error_generic') ?? 'Erreur'}: $e')),
+                  );
+                }
               }
             },
           ),

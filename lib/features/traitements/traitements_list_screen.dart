@@ -90,38 +90,74 @@ class TraitementTile extends ConsumerWidget {
     final rappelProche = traitement.dateRappel != null &&
         !traitement.dateRappel!.isAfter(DateTime.now().add(const Duration(days: 7)));
 
-    return Card(
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(10),
-        leading: CircleAvatar(
-          radius: 22,
-          backgroundColor: AppTheme.primary.withOpacity(0.12),
-          child: Icon(iconePourTypeTraitement(traitement.type), color: AppTheme.primary, size: 20),
-        ),
-        title: Text(traitement.nom, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (afficherOiseau)
-              FutureBuilder(
-                future: ref.watch(oiseauxRepositoryProvider).fetchById(traitement.oiseauId),
-                builder: (context, snapshot) =>
-                    Text(snapshot.hasData ? snapshot.data!.nomAffiche : '...'),
+    return Dismissible(
+      key: ValueKey(traitement.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(color: AppTheme.danger.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+        child: const Icon(Icons.delete_outline, color: AppTheme.danger),
+      ),
+      confirmDismiss: (_) async {
+        return await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text(t?.t('delete_treatment') ?? 'Supprimer le traitement'),
+                content: Text(t?.t('delete_treatment_confirm') ??
+                    'Voulez-vous vraiment supprimer ce traitement ?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text(t?.t('cancel') ?? 'Annuler'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text(t?.t('delete') ?? 'Supprimer',
+                        style: const TextStyle(color: AppTheme.danger)),
+                  ),
+                ],
               ),
-            Text(
-                '${libelleTypeTraitement(traitement.type, t)} · ${DateFormat('dd/MM/yyyy').format(traitement.dateAdministration)}'),
-            if (traitement.dateRappel != null)
-              Text(
-                '${t?.t('reminder') ?? 'Rappel'} : ${DateFormat('dd/MM/yyyy').format(traitement.dateRappel!)}',
-                style: TextStyle(
-                  color: rappelProche ? AppTheme.danger : Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontWeight: rappelProche ? FontWeight.w600 : FontWeight.normal,
+            ) ??
+            false;
+      },
+      onDismissed: (_) async {
+        await ref.read(traitementsRepositoryProvider).delete(traitement.id);
+        ref.invalidate(traitementsListProvider);
+      },
+      child: Card(
+        child: ListTile(
+          contentPadding: const EdgeInsets.all(10),
+          leading: CircleAvatar(
+            radius: 22,
+            backgroundColor: AppTheme.primary.withOpacity(0.12),
+            child: Icon(iconePourTypeTraitement(traitement.type), color: AppTheme.primary, size: 20),
+          ),
+          title: Text(traitement.nom, style: const TextStyle(fontWeight: FontWeight.w600)),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (afficherOiseau)
+                FutureBuilder(
+                  future: ref.watch(oiseauxRepositoryProvider).fetchById(traitement.oiseauId),
+                  builder: (context, snapshot) =>
+                      Text(snapshot.hasData ? snapshot.data!.nomAffiche : '...'),
                 ),
-              ),
-          ],
+              Text(
+                  '${libelleTypeTraitement(traitement.type, t)} · ${DateFormat('dd/MM/yyyy').format(traitement.dateAdministration)}'),
+              if (traitement.dateRappel != null)
+                Text(
+                  '${t?.t('reminder') ?? 'Rappel'} : ${DateFormat('dd/MM/yyyy').format(traitement.dateRappel!)}',
+                  style: TextStyle(
+                    color: rappelProche ? AppTheme.danger : Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontWeight: rappelProche ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+            ],
+          ),
+          isThreeLine: true,
+          onTap: () => context.push('/traitements/${traitement.id}/modifier'),
         ),
-        isThreeLine: true,
-        onTap: () => context.push('/traitements/${traitement.id}/modifier'),
       ),
     );
   }

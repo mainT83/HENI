@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/notification_item.dart';
@@ -28,6 +29,20 @@ class NotificationsScreen extends ConsumerWidget {
 
   Color _couleur(String type) {
     return type == TypeNotification.alerteCritique ? AppTheme.danger : AppTheme.primary;
+  }
+
+  String? _routeEntite(String? entiteType, String? entiteId) {
+    if (entiteId == null) return null;
+    switch (entiteType) {
+      case 'traitement':
+        return '/traitements/$entiteId/modifier';
+      case 'ponte':
+        return '/pontes/$entiteId';
+      case 'oiseau':
+        return '/oiseaux/$entiteId';
+      default:
+        return null;
+    }
   }
 
   @override
@@ -94,6 +109,8 @@ class NotificationsScreen extends ConsumerWidget {
                       trailing: n.lu ? null : Container(width: 10, height: 10, decoration: BoxDecoration(color: couleur, shape: BoxShape.circle)),
                       onTap: () {
                         if (!n.lu) ref.read(notificationsListProvider.notifier).marquerLue(n.id);
+                        final route = _routeEntite(n.entiteType, n.entiteId);
+                        if (route != null) context.push(route);
                       },
                     ),
                   ),
