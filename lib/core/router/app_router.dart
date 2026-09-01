@@ -44,9 +44,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (loggedIn && onAuthPage) return '/dashboard';
 
       if (loggedIn && state.matchedLocation != motDePasseObligatoire) {
-        final identites = Supabase.instance.client.auth.currentUser?.identities ?? [];
+        final utilisateur = Supabase.instance.client.auth.currentUser;
+        final identites = utilisateur?.identities ?? [];
         final connecteViaGoogle = identites.any((i) => i.provider == 'google');
-        final aUnMotDePasse = identites.any((i) => i.provider == 'email');
+        final aUnMotDePasse = utilisateur?.userMetadata?['password_defini'] == true;
         final enRecuperation = ref.read(recuperationMotDePasseProvider);
         if ((connecteViaGoogle && !aUnMotDePasse) || enRecuperation) return motDePasseObligatoire;
       }

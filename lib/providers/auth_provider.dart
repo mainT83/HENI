@@ -62,8 +62,15 @@ class AuthRepository {
   /// Définit/change le mot de passe du compte connecté — utile notamment
   /// pour un compte créé via Google, qui n'a jamais de mot de passe Nidus
   /// et serait sinon bloqué pour se connecter sans passer par Google.
+  ///
+  /// Le flag `password_defini` dans les métadonnées sert de source de
+  /// vérité pour le routeur : on ne peut pas se fier à `user.identities`
+  /// pour détecter qu'un mot de passe existe (définir un mot de passe
+  /// n'ajoute pas forcément une identité "email" côté Supabase).
   Future<void> definirMotDePasse(String nouveauMotDePasse) async {
-    await _client.auth.updateUser(UserAttributes(password: nouveauMotDePasse));
+    await _client.auth.updateUser(
+      UserAttributes(password: nouveauMotDePasse, data: {'password_defini': true}),
+    );
   }
 }
 
