@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/ponte.dart';
+import '../models/oiseau.dart';
 
 class PontesRepository {
   final SupabaseClient _client;
@@ -58,5 +59,23 @@ class PontesRepository {
   Future<Eclosion> enregistrerEclosion(Eclosion eclosion) async {
     final row = await _client.from('eclosions').insert(eclosion.toInsertJson()).select().single();
     return Eclosion.fromJson(row);
+  }
+
+  /// Crée la fiche d'un jeune oiseau à partir d'une éclosion : espèce, date
+  /// de naissance et parents (père/mère du couple) sont renseignés
+  /// automatiquement côté base (fonction creer_jeune_depuis_eclosion).
+  Future<Oiseau> creerJeuneDepuisEclosion({
+    required String eclosionId,
+    required String numeroBague,
+    String sexe = 'indetermine',
+    String? nom,
+  }) async {
+    final row = await _client.rpc('creer_jeune_depuis_eclosion', params: {
+      'p_eclosion_id': eclosionId,
+      'p_numero_bague': numeroBague,
+      'p_sexe': sexe,
+      'p_nom': nom,
+    });
+    return Oiseau.fromJson(row as Map<String, dynamic>);
   }
 }

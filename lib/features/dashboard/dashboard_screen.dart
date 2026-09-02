@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../providers/dashboard_provider.dart';
+import '../../providers/oiseaux_provider.dart';
+import '../../models/oiseau.dart';
 import '../../providers/locale_provider.dart';
 import '../../providers/theme_mode_provider.dart';
 import '../../core/theme/app_theme.dart';
@@ -94,6 +96,11 @@ class DashboardScreen extends ConsumerWidget {
                     value: '${stats.jeunesEnElevage}',
                     icon: Icons.egg,
                     color: AppTheme.emerald,
+                    onTap: () {
+                      ref.read(oiseauxFilterProvider.notifier).state =
+                          const OiseauxFilter(statut: StatutOiseau.jeune);
+                      context.push('/oiseaux');
+                    },
                   ),
                   _StatCard(
                     label: t?.t('ongoing_clutches') ?? 'Pontes en cours',
@@ -109,6 +116,7 @@ class DashboardScreen extends ConsumerWidget {
                         : '--',
                     icon: Icons.show_chart,
                     color: AppTheme.primary,
+                    onTap: () => context.push('/pontes'),
                   ),
                   _StatCard(
                     label: t?.t('unread_notifications') ?? 'Notifications',

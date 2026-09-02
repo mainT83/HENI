@@ -4,7 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/ponte.dart';
+import '../../models/oiseau.dart';
 import '../../providers/pontes_provider.dart';
+import '../../providers/oiseaux_provider.dart';
+import '../../providers/dashboard_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../core/theme/app_theme.dart';
 
@@ -89,6 +92,11 @@ class PonteDetailScreen extends ConsumerWidget {
                               title: Text('${ec.nombrePoussins} poussins'),
                               subtitle: Text(
                                   '${DateFormat('dd/MM/yyyy').format(ec.dateEclosion)}${ec.mortalite > 0 ? ' · ${ec.mortalite} mortalité' : ''}'),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.add_circle_outline, color: AppTheme.primary),
+                                tooltip: t?.t('add_bird') ?? 'Ajouter un oiseau',
+                                onPressed: () => _ouvrirDialogueJeune(context, ref, ec),
+                              ),
                             ),
                           ),
                       ],
@@ -169,6 +177,99 @@ class PonteDetailScreen extends ConsumerWidget {
                 if (dialogContext.mounted) Navigator.of(dialogContext).pop();
               },
               child: Text(t?.t('save') ?? 'Enregistrer'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Crée un jeune oiseau à partir d'une éclosion : espèce, date de
+  /// naissance et parents sont renseignés automatiquement (côté base) à
+  /// partir du couple de la ponte — pas besoin de les ressaisir.
+  void _ouvrirDialogueJeune(BuildContext context, WidgetRef ref, Eclosion eclosion) {
+    final t = ref.read(translationsProvider).valueOrNull;
+    final bagueCtrl = TextEditingController();
+    final nomCtrl = TextEditingController();
+    String sexe = SexeOiseau.indetermine;
+    bool enCours = false;
+    String? erreur;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setState) => AlertDialog(
+          title: Text(t?.t('add_bird') ?? 'Ajouter un oiseau'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: bagueCtrl,
+                autofocus: true,
+                decoration: InputDecoration(labelText: t?.t('ring_number') ?? 'Numéro de bague'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: nomCtrl,
+                decoration: InputDecoration(labelText: t?.t('name') ?? 'Nom'),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: sexe,
+                decoration: InputDecoration(labelText: t?.t('sex') ?? 'Sexe'),
+                items: [
+                  DropdownMenuItem(value: SexeOiseau.male, child: Text(t?.t('male') ?? 'Mâle')),
+                  DropdownMenuItem(value: SexeOiseau.femelle, child: Text(t?.t('female') ?? 'Femelle')),
+                  DropdownMenuItem(
+                      value: SexeOiseau.indetermine, child: Text(t?.t('unknown') ?? 'Indéterminé')),
+                ],
+                onChanged: (v) => setState(() => sexe = v ?? SexeOiseau.indetermine),
+              ),
+              if (erreur != null) ...[
+                const SizedBox(height: 12),
+                Text(erreur!, style: const TextStyle(color: AppTheme.danger)),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: enCours ? null : () => Navigator.of(dialogContext).pop(),
+              child: Text(t?.t('cancel') ?? 'Annuler'),
+            ),
+            FilledButton(
+              onPressed: enCours
+                  ? null
+                  : () async {
+                      if (bagueCtrl.text.trim().isEmpty) {
+                        setState(() => erreur = t?.t('required_field') ?? 'Champ requis');
+                        return;
+                      }
+                      setState(() {
+                        enCours = true;
+                        erreur = null;
+                      });
+                      try {
+                        await ref.read(pontesRepositoryProvider).creerJeuneDepuisEclosion(
+                              eclosionId: eclosion.id,
+                              numeroBague: bagueCtrl.text.trim(),
+                              sexe: sexe,
+                              nom: nomCtrl.text.trim().isEmpty ? null : nomCtrl.text.trim(),
+                            );
+                        ref.invalidate(oiseauxListProvider);
+                        ref.invalidate(dashboardStatsProvider);
+                        if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+                      } catch (e) {
+                        setState(() {
+                          enCours = false;
+                          erreur = e.toString();
+                        });
+                      }
+                    },
+              child: enCours
+                  ? const SizedBox(
+                      height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  : Text(t?.t('save') ?? 'Enregistrer'),
             ),
           ],
         ),
