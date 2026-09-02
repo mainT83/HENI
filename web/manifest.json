@@ -1,11 +1,11 @@
 {
-    "name": "eleveur_app",
-    "short_name": "eleveur_app",
+    "name": "Éleveur Pro — Nidus",
+    "short_name": "Nidus",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#f4eee0",
+    "theme_color": "#5b7553",
+    "description": "Nidus par AvianPro — suivi d'élevage, généalogie et pilotage du contrôleur Breeding Control.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

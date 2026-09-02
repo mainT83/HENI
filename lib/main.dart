@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -9,6 +11,19 @@ import 'providers/theme_mode_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Sans ça, une erreur pendant le build d'un widget ou dans un callback
+  // async (hors Flutter) plante silencieusement ou laisse un écran blanc
+  // sans rien dans la console. Ici on logge au minimum ; un service comme
+  // Sentry pourra être branché dans ces deux callbacks plus tard.
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    developer.log('Erreur Flutter non gérée', error: details.exception, stackTrace: details.stack);
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    developer.log('Erreur asynchrone non gérée', error: error, stackTrace: stack);
+    return true;
+  };
 
   await Supabase.initialize(
     url: SupabaseConfig.url,
