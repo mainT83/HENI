@@ -216,6 +216,13 @@ class _OiseauTile extends ConsumerWidget {
         false;
     if (!confirme || !context.mounted) return;
 
+    // Capturés avant le await : la ligne de cet oiseau disparaît de la liste
+    // dès que la suppression réussit, ce qui peut invalider `context` — sans
+    // ça, le "if (context.mounted)" bloque la fermeture du dialogue de
+    // chargement même après une suppression réussie.
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final messenger = ScaffoldMessenger.of(context);
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -224,14 +231,12 @@ class _OiseauTile extends ConsumerWidget {
     try {
       await ref.read(oiseauxListProvider.notifier).supprimer(oiseau.id);
       ref.invalidate(dashboardStatsProvider);
-      if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
+      navigator.pop();
     } catch (e) {
-      if (context.mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${t?.t('error_generic') ?? 'Erreur'}: $e')),
-        );
-      }
+      navigator.pop();
+      messenger.showSnackBar(
+        SnackBar(content: Text('${t?.t('error_generic') ?? 'Erreur'}: $e')),
+      );
     }
   }
 }

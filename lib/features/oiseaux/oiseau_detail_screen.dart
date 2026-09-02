@@ -53,6 +53,10 @@ class OiseauDetailScreen extends ConsumerWidget {
               );
               if (confirm != true || !context.mounted) return;
 
+              final navigator = Navigator.of(context, rootNavigator: true);
+              final routerContext = context;
+              final messenger = ScaffoldMessenger.of(context);
+
               showDialog(
                 context: context,
                 barrierDismissible: false,
@@ -67,17 +71,13 @@ class OiseauDetailScreen extends ConsumerWidget {
                 ref.invalidate(dashboardStatsProvider);
                 ref.invalidate(tendanceMensuelleProvider);
                 ref.invalidate(incubationsActivesProvider);
-                if (context.mounted) {
-                  Navigator.of(context, rootNavigator: true).pop();
-                  context.pop();
-                }
+                navigator.pop();
+                if (routerContext.mounted) routerContext.pop();
               } catch (e) {
-                if (context.mounted) {
-                  Navigator.of(context, rootNavigator: true).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('${t?.t('error_generic') ?? 'Erreur'}: $e')),
-                  );
-                }
+                navigator.pop();
+                messenger.showSnackBar(
+                  SnackBar(content: Text('${t?.t('error_generic') ?? 'Erreur'}: $e')),
+                );
               }
             },
           ),
