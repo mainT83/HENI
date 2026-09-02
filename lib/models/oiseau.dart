@@ -55,6 +55,13 @@ class Oiseau {
 
   String get nomAffiche => (nom != null && nom!.trim().isNotEmpty) ? nom! : numeroBague;
 
+  /// Numéro de bague suivi de l'année de naissance (ex: "99 - 2026"),
+  /// pratique pour distinguer deux oiseaux qui partagent le même numéro
+  /// d'une année à l'autre. Affichage uniquement — la valeur stockée en
+  /// base (numeroBague) ne change pas.
+  String get bagueAvecAnnee =>
+      dateNaissance != null ? '$numeroBague - ${dateNaissance!.year}' : numeroBague;
+
   factory Oiseau.fromJson(Map<String, dynamic> json) => Oiseau(
         id: json['id'] as String,
         eleveurId: json['eleveur_id'] as String,

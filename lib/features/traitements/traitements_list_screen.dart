@@ -32,7 +32,8 @@ class TraitementsListScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(12),
               itemCount: traitements.length,
               separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (context, i) => TraitementTile(traitement: traitements[i], afficherOiseau: true),
+              itemBuilder: (context, i) =>
+                  TraitementTile(traitement: traitements[i], refEcran: ref, afficherOiseau: true),
             ),
           );
         },
@@ -82,7 +83,15 @@ String libelleTypeTraitement(String type, dynamic t) {
 class TraitementTile extends ConsumerWidget {
   final Traitement traitement;
   final bool afficherOiseau;
-  const TraitementTile({super.key, required this.traitement, this.afficherOiseau = false});
+  // ref de l'écran parent, stable même si cette ligne disparaît de la liste
+  // pendant la suppression (voir le même correctif côté oiseaux).
+  final WidgetRef refEcran;
+  const TraitementTile({
+    super.key,
+    required this.traitement,
+    required this.refEcran,
+    this.afficherOiseau = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -90,75 +99,90 @@ class TraitementTile extends ConsumerWidget {
     final rappelProche = traitement.dateRappel != null &&
         !traitement.dateRappel!.isAfter(DateTime.now().add(const Duration(days: 7)));
 
-    return Dismissible(
-      key: ValueKey(traitement.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        decoration: BoxDecoration(color: AppTheme.danger.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
-        child: const Icon(Icons.delete_outline, color: AppTheme.danger),
-      ),
-      confirmDismiss: (_) async {
-        return await showDialog<bool>(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: Text(t?.t('delete_treatment') ?? 'Supprimer le traitement'),
-                content: Text(t?.t('delete_treatment_confirm') ??
-                    'Voulez-vous vraiment supprimer ce traitement ?'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: Text(t?.t('cancel') ?? 'Annuler'),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    child: Text(t?.t('delete') ?? 'Supprimer',
-                        style: const TextStyle(color: AppTheme.danger)),
-                  ),
-                ],
-              ),
-            ) ??
-            false;
-      },
-      onDismissed: (_) async {
-        await ref.read(traitementsRepositoryProvider).delete(traitement.id);
-        ref.invalidate(traitementsListProvider);
-      },
-      child: Card(
-        child: ListTile(
-          contentPadding: const EdgeInsets.all(10),
-          leading: CircleAvatar(
-            radius: 22,
-            backgroundColor: AppTheme.primary.withOpacity(0.12),
-            child: Icon(iconePourTypeTraitement(traitement.type), color: AppTheme.primary, size: 20),
-          ),
-          title: Text(traitement.nom, style: const TextStyle(fontWeight: FontWeight.w600)),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (afficherOiseau)
-                FutureBuilder(
-                  future: ref.watch(oiseauxRepositoryProvider).fetchById(traitement.oiseauId),
-                  builder: (context, snapshot) =>
-                      Text(snapshot.hasData ? snapshot.data!.nomAffiche : '...'),
-                ),
-              Text(
-                  '${libelleTypeTraitement(traitement.type, t)} · ${DateFormat('dd/MM/yyyy').format(traitement.dateAdministration)}'),
-              if (traitement.dateRappel != null)
-                Text(
-                  '${t?.t('reminder') ?? 'Rappel'} : ${DateFormat('dd/MM/yyyy').format(traitement.dateRappel!)}',
-                  style: TextStyle(
-                    color: rappelProche ? AppTheme.danger : Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontWeight: rappelProche ? FontWeight.w600 : FontWeight.normal,
-                  ),
-                ),
-            ],
-          ),
-          isThreeLine: true,
-          onTap: () => context.push('/traitements/${traitement.id}/modifier'),
+    return Card(
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(10),
+        leading: CircleAvatar(
+          radius: 22,
+          backgroundColor: AppTheme.primary.withOpacity(0.12),
+          child: Icon(iconePourTypeTraitement(traitement.type), color: AppTheme.primary, size: 20),
         ),
+        title: Text(traitement.nom, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (afficherOiseau)
+              FutureBuilder(
+                future: ref.watch(oiseauxRepositoryProvider).fetchById(traitement.oiseauId),
+                builder: (context, snapshot) =>
+                    Text(snapshot.hasData ? snapshot.data!.nomAffiche : '...'),
+              ),
+            Text(
+                '${libelleTypeTraitement(traitement.type, t)} · ${DateFormat('dd/MM/yyyy').format(traitement.dateAdministration)}'),
+            if (traitement.dateRappel != null)
+              Text(
+                '${t?.t('reminder') ?? 'Rappel'} : ${DateFormat('dd/MM/yyyy').format(traitement.dateRappel!)}',
+                style: TextStyle(
+                  color: rappelProche ? AppTheme.danger : Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontWeight: rappelProche ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+          ],
+        ),
+        isThreeLine: true,
+        trailing: IconButton(
+          icon: const Icon(Icons.delete_outline, color: AppTheme.danger),
+          tooltip: t?.t('delete') ?? 'Supprimer',
+          onPressed: () => _supprimer(context, refEcran, t),
+        ),
+        onTap: () => context.push('/traitements/${traitement.id}/modifier'),
       ),
     );
+  }
+
+  Future<void> _supprimer(BuildContext context, WidgetRef ref, dynamic t) async {
+    final confirme = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(t?.t('delete_treatment') ?? 'Supprimer le traitement'),
+            content: Text(t?.t('delete_treatment_confirm') ??
+                'Voulez-vous vraiment supprimer ce traitement ?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(t?.t('cancel') ?? 'Annuler'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(t?.t('delete') ?? 'Supprimer',
+                    style: const TextStyle(color: AppTheme.danger)),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirme || !context.mounted) return;
+
+    // Capturés avant le await : évite un "ref"/context invalide si cette
+    // ligne disparaît de la liste pendant l'opération (voir le même souci
+    // déjà corrigé sur la suppression d'oiseau).
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final messenger = ScaffoldMessenger.of(context);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    try {
+      await ref.read(traitementsRepositoryProvider).delete(traitement.id);
+      ref.invalidate(traitementsListProvider);
+      navigator.pop();
+    } catch (e) {
+      navigator.pop();
+      messenger.showSnackBar(
+        SnackBar(content: Text('${t?.t('error_generic') ?? 'Erreur'}: $e')),
+      );
+    }
   }
 }

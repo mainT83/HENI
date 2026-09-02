@@ -140,7 +140,7 @@ class _DetailBody extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                _InfoRow(label: t?.t('ring_number') ?? 'Bague', value: oiseau.numeroBague),
+                _InfoRow(label: t?.t('ring_number') ?? 'Bague', value: oiseau.bagueAvecAnnee),
                 _InfoRow(label: t?.t('species') ?? 'Espèce', value: especeNom),
                 _InfoRow(label: t?.t('breed') ?? 'Race', value: oiseau.race ?? '—'),
                 _InfoRow(label: t?.t('mutation') ?? 'Mutation', value: oiseau.mutation ?? '—'),
@@ -272,7 +272,7 @@ class _ParentTile extends ConsumerWidget {
         dense: true,
         leading: const Icon(Icons.arrow_upward, size: 18),
         title: Text('$label : ${parent.nomAffiche}'),
-        subtitle: Text(parent.numeroBague),
+        subtitle: Text(parent.bagueAvecAnnee),
         onTap: () => context.push('/oiseaux/${parent.id}'),
       ),
     );
@@ -320,7 +320,8 @@ class _TraitementsSection extends ConsumerWidget {
                 }
                 return Column(
                   children: [
-                    for (final traitement in traitements) TraitementTile(traitement: traitement),
+                    for (final traitement in traitements)
+                      TraitementTile(traitement: traitement, refEcran: ref),
                   ],
                 );
               },

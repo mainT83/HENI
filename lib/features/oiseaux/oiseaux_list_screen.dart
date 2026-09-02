@@ -171,7 +171,7 @@ class _OiseauTile extends ConsumerWidget {
               : null,
         ),
         title: Text(oiseau.nomAffiche, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text('${oiseau.numeroBague} · $especeNom'),
+        subtitle: Text('${oiseau.bagueAvecAnnee} · $especeNom'),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
