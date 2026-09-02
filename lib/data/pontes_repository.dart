@@ -61,6 +61,13 @@ class PontesRepository {
     return Eclosion.fromJson(row);
   }
 
+  /// Nombre d'oiseaux déjà créés pour une éclosion donnée, pour ne pas
+  /// dépasser son nombre de poussins.
+  Future<int> compterJeunesCrees(String eclosionId) async {
+    final rows = await _client.from('oiseaux').select('id').eq('eclosion_id', eclosionId);
+    return (rows as List).length;
+  }
+
   /// Crée la fiche d'un jeune oiseau à partir d'une éclosion : espèce, date
   /// de naissance et parents (père/mère du couple) sont renseignés
   /// automatiquement côté base (fonction creer_jeune_depuis_eclosion).

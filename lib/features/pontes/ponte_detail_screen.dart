@@ -87,16 +87,29 @@ class PonteDetailScreen extends ConsumerWidget {
                       children: [
                         for (final ec in eclosions)
                           Card(
-                            child: ListTile(
-                              leading: const Icon(Icons.egg_outlined, color: AppTheme.success),
-                              title: Text('${ec.nombrePoussins} poussins'),
-                              subtitle: Text(
-                                  '${DateFormat('dd/MM/yyyy').format(ec.dateEclosion)}${ec.mortalite > 0 ? ' · ${ec.mortalite} mortalité' : ''}'),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.add_circle_outline, color: AppTheme.primary),
-                                tooltip: t?.t('add_bird') ?? 'Ajouter un oiseau',
-                                onPressed: () => _ouvrirDialogueJeune(context, ref, ec),
-                              ),
+                            child: FutureBuilder<int>(
+                              future: ref.watch(pontesRepositoryProvider).compterJeunesCrees(ec.id),
+                              builder: (context, snapshot) {
+                                final dejaCrees = snapshot.data;
+                                final complet = dejaCrees != null && dejaCrees >= ec.nombrePoussins;
+                                return ListTile(
+                                  leading: const Icon(Icons.egg_outlined, color: AppTheme.success),
+                                  title: Text('${ec.nombrePoussins} poussins'),
+                                  subtitle: Text(
+                                      '${DateFormat('dd/MM/yyyy').format(ec.dateEclosion)}${ec.mortalite > 0 ? ' · ${ec.mortalite} mortalité' : ''}'
+                                      '${dejaCrees != null ? ' · $dejaCrees/${ec.nombrePoussins} oiseau(x) ajouté(s)' : ''}'),
+                                  trailing: IconButton(
+                                    icon: Icon(Icons.add_circle_outline,
+                                        color: complet ? Colors.grey : AppTheme.primary),
+                                    tooltip: complet
+                                        ? (t?.t('all_chicks_added') ?? 'Tous les poussins sont déjà ajoutés')
+                                        : (t?.t('add_bird') ?? 'Ajouter un oiseau'),
+                                    onPressed: (dejaCrees == null || complet)
+                                        ? null
+                                        : () => _ouvrirDialogueJeune(context, ref, ec),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                       ],
@@ -258,11 +271,14 @@ class PonteDetailScreen extends ConsumerWidget {
                             );
                         ref.invalidate(oiseauxListProvider);
                         ref.invalidate(dashboardStatsProvider);
+                        ref.invalidate(eclosionsProvider(eclosion.ponteId));
                         if (dialogContext.mounted) Navigator.of(dialogContext).pop();
                       } catch (e) {
                         setState(() {
                           enCours = false;
-                          erreur = e.toString();
+                          erreur = e.toString().contains('limite_poussins_eclosion')
+                              ? (t?.t('all_chicks_added') ?? 'Tous les poussins de cette éclosion ont déjà une fiche.')
+                              : e.toString();
                         });
                       }
                     },
