@@ -63,7 +63,7 @@ class PonteDetailScreen extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Éclosions', style: Theme.of(context).textTheme.titleMedium),
-                if (ponte.statut == StatutPonte.enCours)
+                if (ponte.statut != StatutPonte.echec)
                   TextButton.icon(
                     onPressed: () => _ouvrirDialogueEclosion(context, ref, ponte),
                     icon: const Icon(Icons.add, size: 18),
