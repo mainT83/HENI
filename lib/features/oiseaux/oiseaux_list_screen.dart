@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../models/oiseau.dart';
 import '../../providers/oiseaux_provider.dart';
+import '../../providers/dashboard_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/feather_icon.dart';
@@ -150,32 +151,91 @@ class _OiseauTile extends ConsumerWidget {
       orElse: () => '',
     );
 
-    return Card(
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(10),
-        leading: CircleAvatar(
-          radius: 26,
-          backgroundColor: Colors.grey.shade200,
-          backgroundImage:
-              oiseau.photoUrl != null ? CachedNetworkImageProvider(oiseau.photoUrl!) : null,
-          child: oiseau.photoUrl == null
-              ? const FeatherIcon(size: 20, color: Colors.grey)
-              : null,
-        ),
-        title: Text(oiseau.nomAffiche, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text('${oiseau.numeroBague} · $especeNom'),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: AppTheme.statutColor(oiseau.statut).withOpacity(0.12),
-            borderRadius: BorderRadius.circular(999),
+    final t = ref.watch(translationsProvider).valueOrNull;
+
+    return Dismissible(
+      key: ValueKey(oiseau.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration:
+            BoxDecoration(color: AppTheme.danger.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+        child: const Icon(Icons.delete_outline, color: AppTheme.danger),
+      ),
+      confirmDismiss: (_) async {
+        final confirme = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text(t?.t('delete') ?? 'Supprimer'),
+                content: Text(t?.t('delete_bird_confirm') ??
+                    'Confirmer la suppression de cet oiseau ?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text(t?.t('cancel') ?? 'Annuler'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text(t?.t('delete') ?? 'Supprimer',
+                        style: const TextStyle(color: AppTheme.danger)),
+                  ),
+                ],
+              ),
+            ) ??
+            false;
+        if (!confirme || !context.mounted) return false;
+
+        // On supprime ici (pas dans onDismissed) : si ça échoue, l'oiseau
+        // reste visible dans la liste au lieu de disparaître alors qu'il
+        // n'a en fait pas été supprimé côté serveur.
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => const Center(child: CircularProgressIndicator()),
+        );
+        try {
+          await ref.read(oiseauxListProvider.notifier).supprimer(oiseau.id);
+          ref.invalidate(dashboardStatsProvider);
+          if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
+          return true;
+        } catch (e) {
+          if (context.mounted) {
+            Navigator.of(context, rootNavigator: true).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('${t?.t('error_generic') ?? 'Erreur'}: $e')),
+            );
+          }
+          return false;
+        }
+      },
+      child: Card(
+        child: ListTile(
+          contentPadding: const EdgeInsets.all(10),
+          leading: CircleAvatar(
+            radius: 26,
+            backgroundColor: Colors.grey.shade200,
+            backgroundImage:
+                oiseau.photoUrl != null ? CachedNetworkImageProvider(oiseau.photoUrl!) : null,
+            child: oiseau.photoUrl == null
+                ? const FeatherIcon(size: 20, color: Colors.grey)
+                : null,
           ),
-          child: Text(
-            oiseau.statut,
-            style: TextStyle(color: AppTheme.statutColor(oiseau.statut), fontSize: 11),
+          title: Text(oiseau.nomAffiche, style: const TextStyle(fontWeight: FontWeight.w600)),
+          subtitle: Text('${oiseau.numeroBague} · $especeNom'),
+          trailing: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppTheme.statutColor(oiseau.statut).withOpacity(0.12),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              oiseau.statut,
+              style: TextStyle(color: AppTheme.statutColor(oiseau.statut), fontSize: 11),
+            ),
           ),
+          onTap: () => context.push('/oiseaux/${oiseau.id}'),
         ),
-        onTap: () => context.push('/oiseaux/${oiseau.id}'),
       ),
     );
   }
