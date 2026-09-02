@@ -72,7 +72,7 @@ class OiseauxListScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(12),
                     itemCount: oiseaux.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (context, i) => _OiseauTile(oiseau: oiseaux[i]),
+                    itemBuilder: (context, i) => _OiseauTile(oiseau: oiseaux[i], refEcran: ref),
                   ),
                 );
               },
@@ -138,7 +138,12 @@ class _FilterChip extends StatelessWidget {
 
 class _OiseauTile extends ConsumerWidget {
   final Oiseau oiseau;
-  const _OiseauTile({required this.oiseau});
+  // ref de l'écran (OiseauxListScreen), stable tant qu'on reste sur la page —
+  // contrairement au `ref` de cette tuile, détruit avec elle dès que la
+  // suppression fait disparaître sa ligne de la liste en plein milieu de
+  // l'opération.
+  final WidgetRef refEcran;
+  const _OiseauTile({required this.oiseau, required this.refEcran});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -184,7 +189,7 @@ class _OiseauTile extends ConsumerWidget {
             IconButton(
               icon: const Icon(Icons.delete_outline, color: AppTheme.danger),
               tooltip: t?.t('delete') ?? 'Supprimer',
-              onPressed: () => _supprimer(context, ref, oiseau, t),
+              onPressed: () => _supprimer(context, refEcran, oiseau, t),
             ),
           ],
         ),
