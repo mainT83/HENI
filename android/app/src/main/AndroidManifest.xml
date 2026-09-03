@@ -1,8 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Android 9+ bloque le HTTP en clair par défaut. Le contrôleur Breeding
+         Control (Pico W) n'a pas de certificat TLS et n'est joignable qu'en
+         HTTP sur le réseau local — sans ce flag, le pairage du contrôleur
+         échoue silencieusement sur Android récent. -->
     <application
         android:label="eleveur_app"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"
