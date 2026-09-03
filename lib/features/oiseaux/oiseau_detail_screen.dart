@@ -53,6 +53,12 @@ class OiseauDetailScreen extends ConsumerWidget {
               );
               if (confirm != true || !context.mounted) return;
 
+              // Laisse le geste de tap se terminer avant d'enchaîner sur un
+              // autre dialogue (bug Flutter Web : sinon le reconnaisseur de
+              // gestes peut planter en interne et bloquer la suite).
+              await Future.delayed(Duration.zero);
+              if (!context.mounted) return;
+
               final navigator = Navigator.of(context, rootNavigator: true);
               final routerContext = context;
               final messenger = ScaffoldMessenger.of(context);

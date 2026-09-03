@@ -221,6 +221,14 @@ class _OiseauTile extends ConsumerWidget {
         false;
     if (!confirme || !context.mounted) return;
 
+    // Laisse le geste de tap sur le bouton "Supprimer" se terminer proprement
+    // avant d'enchaîner sur une autre boîte de dialogue : sur Flutter Web,
+    // fermer ce dialogue et en ouvrir un autre dans la même frame peut faire
+    // planter le reconnaisseur de gestes en interne (bug Flutter connu),
+    // empêchant la suite de s'exécuter.
+    await Future.delayed(Duration.zero);
+    if (!context.mounted) return;
+
     // Capturés avant le await : la ligne de cet oiseau disparaît de la liste
     // dès que la suppression réussit, ce qui peut invalider `context` — sans
     // ça, le "if (context.mounted)" bloque la fermeture du dialogue de
