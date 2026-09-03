@@ -64,15 +64,19 @@ class OiseauDetailScreen extends ConsumerWidget {
               );
               try {
                 // Passe par le notifier de la liste : il exécute le delete puis
-                // recharge lui-même, donc la liste est à jour dès qu'on y revient
-                // (au lieu d'invalider un provider qu'on espère être réécouté).
+                // recharge lui-même, donc la liste est à jour dès qu'on y revient.
                 await ref.read(oiseauxListProvider.notifier).supprimer(oiseauId);
-                ref.invalidate(oiseauDetailProvider(oiseauId));
+
+                // On quitte la fiche AVANT d'invalider quoi que ce soit :
+                // cette page est encore affichée à ce stade, donc invalider
+                // oiseauDetailProvider(oiseauId) ici forcerait un rechargement
+                // de la fiche d'un oiseau qui vient d'être supprimé.
+                navigator.pop();
+                if (routerContext.mounted) routerContext.go('/oiseaux');
+
                 ref.invalidate(dashboardStatsProvider);
                 ref.invalidate(tendanceMensuelleProvider);
                 ref.invalidate(incubationsActivesProvider);
-                navigator.pop();
-                if (routerContext.mounted) routerContext.pop();
               } catch (e) {
                 navigator.pop();
                 messenger.showSnackBar(
