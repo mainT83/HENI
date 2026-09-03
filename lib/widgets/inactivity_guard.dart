@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -9,6 +10,13 @@ import '../providers/auth_provider.dart';
 /// interaction (clic/tap) — protection pour les appareils partagés, gratuite
 /// et indépendante du plan Supabase (l'équivalent côté serveur, "Inactivity
 /// timeout", est réservé au plan Pro).
+///
+/// Observe les évènements pointeur via `pointerRouter.addGlobalRoute` plutôt
+/// qu'un `Listener` autour de toute l'app : un `Listener` englobant fait
+/// partie de l'arbre de rendu et peut perturber l'arène de gestes de Flutter
+/// (des clics ailleurs dans l'app — ex. confirmer une suppression — pouvaient
+/// alors être rejetés en interne par erreur). Une route globale sur le
+/// pointeur observe les évènements sans y participer.
 class InactivityGuard extends ConsumerStatefulWidget {
   final Widget child;
   const InactivityGuard({super.key, required this.child});
@@ -30,15 +38,21 @@ class _InactivityGuardState extends ConsumerState<InactivityGuard> {
     });
   }
 
+  void _surEvenementPointeur(PointerEvent event) {
+    if (event is PointerDownEvent) _reinitialiser();
+  }
+
   @override
   void initState() {
     super.initState();
     _reinitialiser();
+    GestureBinding.instance.pointerRouter.addGlobalRoute(_surEvenementPointeur);
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    GestureBinding.instance.pointerRouter.removeGlobalRoute(_surEvenementPointeur);
     super.dispose();
   }
 
@@ -47,11 +61,6 @@ class _InactivityGuardState extends ConsumerState<InactivityGuard> {
     // Redémarre aussi le minuteur à chaque connexion/déconnexion (pas
     // seulement au premier affichage du widget).
     ref.listen(authStateProvider, (_, __) => _reinitialiser());
-
-    return Listener(
-      behavior: HitTestBehavior.translucent,
-      onPointerDown: (_) => _reinitialiser(),
-      child: widget.child,
-    );
+    return widget.child;
   }
 }
