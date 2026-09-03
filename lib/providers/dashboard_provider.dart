@@ -15,7 +15,8 @@ class TendanceMensuelle {
 
 final tendanceMensuelleProvider = FutureProvider<List<TendanceMensuelle>>((ref) async {
   final client = ref.watch(supabaseClientProvider);
-  final rows = await client.rpc('tendance_mensuelle', params: {'p_nb_mois': 6});
+  final rows = await _avecReessaiJwt(
+      client, () => client.rpc('tendance_mensuelle', params: {'p_nb_mois': 6}));
   return (rows as List)
       .map((r) => TendanceMensuelle.fromJson(r as Map<String, dynamic>))
       .toList();
@@ -45,13 +46,15 @@ class IncubationActive {
 final incubationsActivesProvider = FutureProvider<List<IncubationActive>>((ref) async {
   final client = ref.watch(supabaseClientProvider);
 
-  final pontes = await client
-      .from('pontes')
-      .select('id, couple_id, date_eclosion_prevue, nombre_oeufs, oeufs_fecondes')
-      .eq('statut', 'en_cours')
-      .not('date_eclosion_prevue', 'is', null)
-      .order('date_eclosion_prevue')
-      .limit(5) as List;
+  final pontes = await _avecReessaiJwt(
+      client,
+      () => client
+          .from('pontes')
+          .select('id, couple_id, date_eclosion_prevue, nombre_oeufs, oeufs_fecondes')
+          .eq('statut', 'en_cours')
+          .not('date_eclosion_prevue', 'is', null)
+          .order('date_eclosion_prevue')
+          .limit(5)) as List;
 
   if (pontes.isEmpty) return [];
 
@@ -108,22 +111,26 @@ class DashboardStats {
 
 final dashboardStatsProvider = FutureProvider<DashboardStats>((ref) async {
   final client = ref.watch(supabaseClientProvider);
-  final rows = await _rpcAvecReessai(client, 'dashboard_stats');
+  final rows = await _avecReessaiJwt(client, () => client.rpc('dashboard_stats'));
   final row = (rows as List).first as Map<String, dynamic>;
   return DashboardStats.fromJson(row);
 });
 
-/// Juste après une connexion (surtout OAuth), le jeton fraîchement émis peut
-/// être rejeté par un décalage d'horloge côté serveur (PostgrestException
-/// "JWT issued at future", code PGRST303). Un simple délai ne suffit pas
-/// toujours : on force explicitement l'émission d'un jeton neuf via
-/// refreshSession() avant de réessayer, jusqu'à 3 fois.
-Future<dynamic> _rpcAvecReessai(SupabaseClient client, String fonction) async {
+/// Incident Supabase en cours (rejets JWT intermittents, cf. status.supabase.com,
+/// pas encore corrigé côté serveur début septembre 2026) — un jeton pourtant
+/// valide se fait parfois rejeter par PostgREST avec un 401, ou avec l'erreur
+/// "JWT issued at future" (PGRST303) en cas de léger décalage d'horloge. Un
+/// simple délai ne suffit pas toujours : on force explicitement l'émission
+/// d'un jeton neuf via refreshSession() avant de réessayer, jusqu'à 3 fois.
+Future<T> _avecReessaiJwt<T>(SupabaseClient client, Future<T> Function() appel) async {
   for (var tentative = 0; ; tentative++) {
     try {
-      return await client.rpc(fonction);
+      return await appel();
     } on PostgrestException catch (e) {
-      if (e.code != 'PGRST303' || tentative >= 2) rethrow;
+      final estErreurJwt = e.code == 'PGRST303' ||
+          e.code == '401' ||
+          e.message.toLowerCase().contains('jwt');
+      if (!estErreurJwt || tentative >= 2) rethrow;
       await Future.delayed(Duration(seconds: 2 * (tentative + 1)));
       try {
         await client.auth.refreshSession();
