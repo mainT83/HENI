@@ -5,13 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/oiseau.dart';
-import '../../data/oiseaux_repository.dart';
 import '../../providers/oiseaux_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/feather_icon.dart';
 import '../../providers/traitements_provider.dart';
-import '../../providers/dashboard_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../widgets/premium_locked_card.dart';
 import '../traitements/traitements_list_screen.dart';
@@ -28,68 +26,13 @@ class OiseauDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(t?.t('birds') ?? 'Oiseau'),
+        // La suppression se fait uniquement depuis la liste des oiseaux
+        // (icône corbeille sur chaque ligne) — un seul endroit pour cette
+        // action, plus simple et plus fiable.
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             onPressed: () => context.push('/oiseaux/$oiseauId/modifier'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            onPressed: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (_) => AlertDialog(
-                  title: Text(t?.t('delete') ?? 'Supprimer'),
-                  content: const Text('Confirmer la suppression de cet oiseau ?'),
-                  actions: [
-                    TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: Text(t?.t('cancel') ?? 'Annuler')),
-                    TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: Text(t?.t('delete') ?? 'Supprimer')),
-                  ],
-                ),
-              );
-              if (confirm != true || !context.mounted) return;
-
-              // Laisse le geste de tap se terminer avant d'enchaîner sur un
-              // autre dialogue (bug Flutter Web : sinon le reconnaisseur de
-              // gestes peut planter en interne et bloquer la suite).
-              await Future.delayed(Duration.zero);
-              if (!context.mounted) return;
-
-              final navigator = Navigator.of(context, rootNavigator: true);
-              final routerContext = context;
-              final messenger = ScaffoldMessenger.of(context);
-
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (_) => const Center(child: CircularProgressIndicator()),
-              );
-              try {
-                // Passe par le notifier de la liste : il exécute le delete puis
-                // recharge lui-même, donc la liste est à jour dès qu'on y revient.
-                await ref.read(oiseauxListProvider.notifier).supprimer(oiseauId);
-
-                // On quitte la fiche AVANT d'invalider quoi que ce soit :
-                // cette page est encore affichée à ce stade, donc invalider
-                // oiseauDetailProvider(oiseauId) ici forcerait un rechargement
-                // de la fiche d'un oiseau qui vient d'être supprimé.
-                navigator.pop();
-                if (routerContext.mounted) routerContext.go('/oiseaux');
-
-                ref.invalidate(dashboardStatsProvider);
-                ref.invalidate(tendanceMensuelleProvider);
-                ref.invalidate(incubationsActivesProvider);
-              } catch (e) {
-                navigator.pop();
-                messenger.showSnackBar(
-                  SnackBar(content: Text('${t?.t('error_generic') ?? 'Erreur'}: $e')),
-                );
-              }
-            },
           ),
         ],
       ),
