@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/oiseau.dart';
+import '../../data/oiseaux_repository.dart';
 import '../../providers/oiseaux_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../core/theme/app_theme.dart';
