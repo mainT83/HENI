@@ -166,7 +166,7 @@ class ReglagesScreen extends ConsumerWidget {
               final numeroSoucheAsync = ref.watch(numeroSoucheProvider);
               return Card(
                 child: ListTile(
-                  leading: const Icon(Icons.biotech_outlined),
+                  leading: const Text('🧬', style: TextStyle(fontSize: 24)),
                   title: const Text('Numéro de souche'),
                   subtitle: Text(numeroSoucheAsync.valueOrNull?.isNotEmpty == true
                       ? numeroSoucheAsync.valueOrNull!
