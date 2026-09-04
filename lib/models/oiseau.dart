@@ -20,6 +20,7 @@ class Oiseau {
   final String id;
   final String eleveurId;
   final String numeroBague;
+  final String? numeroSouche;
   final String? nom;
   final String especeId;
   final String? race;
@@ -38,6 +39,7 @@ class Oiseau {
     required this.id,
     required this.eleveurId,
     required this.numeroBague,
+    this.numeroSouche,
     this.nom,
     required this.especeId,
     this.race,
@@ -66,6 +68,7 @@ class Oiseau {
         id: json['id'] as String,
         eleveurId: json['eleveur_id'] as String,
         numeroBague: json['numero_bague'] as String,
+        numeroSouche: json['numero_souche'] as String?,
         nom: json['nom'] as String?,
         especeId: json['espece_id'] as String,
         race: json['race'] as String?,
@@ -87,6 +90,7 @@ class Oiseau {
   Map<String, dynamic> toInsertJson({required String eleveurId}) => {
         'eleveur_id': eleveurId,
         'numero_bague': numeroBague,
+        'numero_souche': numeroSouche,
         'nom': nom,
         'espece_id': especeId,
         'race': race,
@@ -102,6 +106,7 @@ class Oiseau {
       };
 
   Oiseau copyWith({
+    String? numeroSouche,
     String? nom,
     String? especeId,
     String? race,
@@ -119,6 +124,7 @@ class Oiseau {
       id: id,
       eleveurId: eleveurId,
       numeroBague: numeroBague,
+      numeroSouche: numeroSouche ?? this.numeroSouche,
       nom: nom ?? this.nom,
       especeId: especeId ?? this.especeId,
       race: race ?? this.race,

@@ -36,6 +36,8 @@
   "unknown": "غير محدد",
   "birth_date": "تاريخ الميلاد",
   "origin_breeder": "المربي الأصلي",
+  "strain_number": "رقم السلالة",
+  "strain_number_help": "معبأ مسبقًا برقمك — غيّره إذا كان الطائر من مصدر آخر",
   "status": "الحالة",
   "status_breeder": "مولّد",
   "status_young": "صغير",

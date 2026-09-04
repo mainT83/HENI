@@ -95,6 +95,8 @@ class _DetailBody extends ConsumerWidget {
             child: Column(
               children: [
                 _InfoRow(label: t?.t('ring_number') ?? 'Bague', value: oiseau.bagueAvecAnnee),
+                _InfoRow(
+                    label: t?.t('strain_number') ?? 'Souche', value: oiseau.numeroSouche ?? '—'),
                 _InfoRow(label: t?.t('species') ?? 'Espèce', value: especeNom),
                 _InfoRow(label: t?.t('breed') ?? 'Race', value: oiseau.race ?? '—'),
                 _InfoRow(label: t?.t('mutation') ?? 'Mutation', value: oiseau.mutation ?? '—'),

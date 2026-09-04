@@ -11,6 +11,7 @@ import '../../models/espece.dart';
 import '../../providers/oiseaux_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../providers/dashboard_provider.dart';
+import '../../providers/profile_provider.dart';
 import '../../data/limite_plan_gratuit_exception.dart';
 
 /// Écran unique pour créer (oiseauId == null) ou modifier un oiseau.
@@ -28,6 +29,7 @@ class _OiseauFormScreenState extends ConsumerState<OiseauFormScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final _bagueCtrl = TextEditingController();
+  final _soucheCtrl = TextEditingController();
   final _nomCtrl = TextEditingController();
   final _raceCtrl = TextEditingController();
   final _raceFocusNode = FocusNode();
@@ -60,6 +62,7 @@ class _OiseauFormScreenState extends ConsumerState<OiseauFormScreen> {
     if (widget.isEdition) {
       final oiseau = await ref.read(oiseauxRepositoryProvider).fetchById(widget.oiseauId!);
       _bagueCtrl.text = oiseau.numeroBague;
+      _soucheCtrl.text = oiseau.numeroSouche ?? '';
       _nomCtrl.text = oiseau.nom ?? '';
       _raceCtrl.text = oiseau.race ?? '';
       _mutationCtrl.text = oiseau.mutation ?? '';
@@ -72,6 +75,11 @@ class _OiseauFormScreenState extends ConsumerState<OiseauFormScreen> {
       _pereId = oiseau.pereId;
       _mereId = oiseau.mereId;
       _photoUrlExistante = oiseau.photoUrl;
+    } else {
+      // Nouvel oiseau : pré-rempli avec le numéro de souche de l'éleveur —
+      // il pourra le changer si l'oiseau vient d'ailleurs.
+      final numeroSouche = await ref.read(numeroSoucheProvider.future);
+      _soucheCtrl.text = numeroSouche ?? '';
     }
     if (mounted) setState(() => _chargementInitial = false);
   }
@@ -79,6 +87,7 @@ class _OiseauFormScreenState extends ConsumerState<OiseauFormScreen> {
   @override
   void dispose() {
     _bagueCtrl.dispose();
+    _soucheCtrl.dispose();
     _nomCtrl.dispose();
     _raceCtrl.dispose();
     _raceFocusNode.dispose();
@@ -129,6 +138,7 @@ class _OiseauFormScreenState extends ConsumerState<OiseauFormScreen> {
         id: widget.oiseauId ?? const Uuid().v4(),
         eleveurId: '', // renseigné par toInsertJson()
         numeroBague: _bagueCtrl.text.trim(),
+        numeroSouche: _soucheCtrl.text.trim().isEmpty ? null : _soucheCtrl.text.trim(),
         nom: _nomCtrl.text.trim().isEmpty ? null : _nomCtrl.text.trim(),
         especeId: _especeId!,
         race: _raceCtrl.text.trim().isEmpty ? null : _raceCtrl.text.trim(),
@@ -356,6 +366,16 @@ class _OiseauFormScreenState extends ConsumerState<OiseauFormScreen> {
                     controller: _origineCtrl,
                     decoration: InputDecoration(
                         labelText: t?.t('origin_breeder') ?? "Éleveur d'origine", isDense: true),
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _soucheCtrl,
+                    decoration: InputDecoration(
+                      labelText: t?.t('strain_number') ?? 'Numéro de souche',
+                      helperText: t?.t('strain_number_help') ??
+                          "Pré-rempli avec le tien — change-le si l'oiseau vient d'ailleurs",
+                      isDense: true,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Row(

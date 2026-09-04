@@ -36,6 +36,8 @@
   "unknown": "Indéterminé",
   "birth_date": "Date de naissance",
   "origin_breeder": "Éleveur d'origine",
+  "strain_number": "Numéro de souche",
+  "strain_number_help": "Pré-rempli avec le tien — change-le si l'oiseau vient d'ailleurs",
   "status": "Statut",
   "status_breeder": "Reproducteur",
   "status_young": "Jeune",

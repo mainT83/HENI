@@ -5,10 +5,51 @@ import '../../providers/locale_provider.dart';
 import '../../providers/theme_mode_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/profile_provider.dart';
+import '../../providers/supabase_provider.dart';
 import '../../core/theme/app_theme.dart';
 
 class ReglagesScreen extends ConsumerWidget {
   const ReglagesScreen({super.key});
+
+  Future<void> _afficherDefinirNumeroSouche(
+      BuildContext context, WidgetRef ref, String? valeurActuelle) async {
+    final ctrl = TextEditingController(text: valeurActuelle ?? '');
+    final saisie = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Numéro de souche'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Ton identifiant fixe d\'éleveur. Il sera appliqué automatiquement aux oiseaux nés chez toi, pour les distinguer de ceux achetés ailleurs portant le même numéro de bague.',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: ctrl,
+              autofocus: true,
+              decoration: const InputDecoration(labelText: 'Numéro de souche'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(ctrl.text.trim()),
+            child: const Text('Enregistrer'),
+          ),
+        ],
+      ),
+    );
+    if (saisie == null || !context.mounted) return;
+    await definirNumeroSouche(ref.read(supabaseClientProvider), saisie);
+    ref.invalidate(numeroSoucheProvider);
+  }
 
   Future<void> _afficherDefinirMotDePasse(BuildContext context) async {
     final succes = await showDialog<bool>(
@@ -118,6 +159,22 @@ class ReglagesScreen extends ConsumerWidget {
               onChanged: (actif) => ref.read(themeModeProvider.notifier).state =
                   actif ? ThemeMode.dark : ThemeMode.light,
             ),
+          ),
+          const SizedBox(height: 16),
+          Consumer(
+            builder: (context, ref, _) {
+              final numeroSoucheAsync = ref.watch(numeroSoucheProvider);
+              return Card(
+                child: ListTile(
+                  leading: const Icon(Icons.tag_outlined),
+                  title: const Text('Numéro de souche'),
+                  subtitle: Text(numeroSoucheAsync.valueOrNull?.isNotEmpty == true
+                      ? numeroSoucheAsync.valueOrNull!
+                      : 'Non défini — utilisé automatiquement pour tes oiseaux nés ici'),
+                  onTap: () => _afficherDefinirNumeroSouche(context, ref, numeroSoucheAsync.valueOrNull),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 16),
           Card(

@@ -36,6 +36,8 @@
   "unknown": "Unknown",
   "birth_date": "Birth date",
   "origin_breeder": "Origin breeder",
+  "strain_number": "Strain number",
+  "strain_number_help": "Pre-filled with yours — change it if the bird comes from elsewhere",
   "status": "Status",
   "status_breeder": "Breeder",
   "status_young": "Young",
